@@ -1,0 +1,231 @@
+{% extends 'Orphan-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}الإشعارات{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <p class="title-guarantee">الإشعارات الواردة</p>
+
+    <div class="search-eara">
+        <div><input type="text" id="searchInput" placeholder="ابحث عن إشعار..." onkeyup="filterNotifications()"></div>
+        <select id="typeFilter" class="select-list-header" onchange="filterNotifications()">
+            <option value="">كل المصادر</option>
+            <option value="system">نظام</option>
+            <option value="sponsor">كافل</option>
+        </select>
+        <input type="date" id="dateFilter" class="select-list-header"
+            style="padding: 5px; border: 1px solid #ccc; border-radius: 5px; outline: none; margin-left: 10px;"
+            onchange="filterNotifications()">
+        <a href="javascript:void(0);" class="readed" onclick="markAllAsRead()"> مقروءة للكل </a>
+    </div>
+
+    <div class="notifications-container">
+        <div class="card-body table-responsive" style="max-width: 90%; margin-right: 15px;">
+            <table class="table table-hover text-wrap table-lg notifications-table"
+                style="border-radius: 10px; overflow: hidden;">
+                <thead>
+                    <tr>
+                        <th class="status-col">الحالة</th>
+                        <th class="content-col">محتوى الإشعار</th>
+                        <th class="source-col">المصدر</th>
+                        <th class="date-col">التاريخ</th>
+                        <th class="time-col">الوقت</th>
+                        <th class="actions-col">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notification in notifications %}
+                    <tr class="{% if not notification.is_read %}table-active{% endif %}" id="row-{{ notification.id }}">
+                        <td data-label="الحالة">
+                            <span id="status-dot-{{ notification.id }}"
+                                class="status-indicator {% if notification.is_read %}old{% else %}new{% endif %}"></span>
+                        </td>
+                        <td data-label="محتوى الإشعار" class="notification-content">
+                            <div class="content-wrapper">
+                                {% if notification.title %}
+                                {{ notification.title|truncatechars:40 }}
+                                {% else %}
+                                {{ notification.message|truncatechars:40 }}
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td data-label="المصدر" class="notification-source">
+                            {% if notification.source %}
+                            {{ notification.source }}
+                            {% else %}
+                            النظام
+                            {% endif %}
+                        </td>
+                        <td data-label="التاريخ" class="notification-date"
+                            data-raw-date="{{ notification.created_at|date:'Y-m-d' }}">
+                            {{ notification.created_at|date:"Y/m/d" }}
+                        </td>
+                        <td data-label="الوقت" class="notification-time">{{ notification.created_at|date:"h:i a" }}</td>
+                        <td class="stutes">
+                            <a href="javascript:void(0);" style="background-color: #7b7e85;"
+                                class="notification-detailes" onclick="openAndMarkRead('{{ notification.id }}')">عرض</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center" style="padding: 30px;">لا توجد إشعارات واردة حتى الآن.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% for notification in notifications %}
+<div id="notificationModal_{{ notification.id }}" class="modalshow"
+    style="display: none; position: fixed; z-index: 999999; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(0,0,0,0.6); overflow-y: auto;">
+    <div
+        style="background-color: white; width: 90%; max-width: 550px; margin: 10vh auto; border-radius: 12px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.4); position: relative; direction: rtl; text-align: right; overflow: hidden; font-family: inherit;">
+
+        <div
+            style="background-color: #2a756b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; font-weight: bold; font-size: 1.2rem;">تفاصيل الإشعار</h4>
+            <span onclick="document.getElementById('notificationModal_{{ notification.id }}').style.display='none'"
+                style="cursor: pointer; font-size: 28px; line-height: 1; opacity: 0.8;">&times;</span>
+        </div>
+
+        <div style="padding: 25px; color: #333;">
+            <p style="margin-bottom: 20px; font-size: 1.1rem;">
+                <strong style="color: #2a756b;">عنوان الإشعار:</strong>
+                <span style="color: #444;">
+                    {% if notification.title %}
+                    {{ notification.title }}
+                    {% else %}
+                    بدون عنوان
+                    {% endif %}
+                </span>
+            </p>
+
+            <div
+                style="display: flex; gap: 20px; margin-bottom: 20px; font-size: 0.95rem; color: #666; flex-wrap: wrap;">
+                <p style="margin: 0;"><strong>المصدر:</strong>
+                    {% if notification.source %}
+                    {{ notification.source }}
+                    {% else %}
+                    النظام
+                    {% endif %}
+                </p>
+                <p style="margin: 0;"><strong>تاريخ الاستلام:</strong> <span dir="ltr">{{
+                        notification.created_at|date:"Y/m/d h:i a" }}</span></p>
+            </div>
+
+            <p style="margin-bottom: 20px;">
+                <strong style="color: #2a756b;">الحالة:</strong>
+                <span id="modal-status-{{ notification.id }}"
+                    style="display: inline-block; background-color: {% if notification.is_read %}#68AF73{% else %}#006dff{% endif %}; padding: 5px 15px; border-radius: 20px; color: white; font-size: 0.85rem; margin-right: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    {% if notification.is_read %}مقروءة{% else %}غير مقروءة{% endif %}
+                </span>
+            </p>
+
+            <div
+                style="background-color: #f4f6f9; border-right: 4px solid #2a756b; padding: 20px; border-radius: 5px; margin-top: 25px;">
+                <p style="margin: 0; line-height: 1.7; font-size: 1rem; color: #333;">{{ notification.message }}</p>
+            </div>
+        </div>
+
+        {% if not notification.is_read %}
+        <div style="padding: 0 25px 25px; text-align: left;">
+            <a href="javascript:void(0);" onclick="openAndMarkRead('{{ notification.id }}')"
+                style="display: inline-block; background-color: #2a756b; color: white; padding: 10px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 6px rgba(42, 117, 107, 0.3);">تحديد
+                كمقروء &check;</a>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function filterNotifications() {
+        let searchValue = document.getElementById("searchInput").value.toLowerCase();
+        let typeValue = document.getElementById("typeFilter").value.toLowerCase();
+        let dateValue = document.getElementById("dateFilter").value;
+        let rows = document.querySelectorAll(".notifications-table tbody tr");
+
+        rows.forEach(row => {
+            if (row.cells.length === 1) return;
+            let content = row.querySelector(".notification-content").innerText.toLowerCase();
+            let source = row.querySelector(".notification-source").innerText.toLowerCase().trim();
+            let rawDate = row.querySelector(".notification-date").getAttribute("data-raw-date");
+
+            let matchesSearch = content.includes(searchValue);
+            let matchesDate = dateValue === "" || rawDate === dateValue;
+
+            let matchesType = true;
+            if (typeValue !== "") {
+                if (typeValue === "system") {
+                    matchesType = source.includes("system") || source.includes("نظام");
+                } else if (typeValue === "sponsor") {
+                    matchesType = source.includes("sponsor") || source.includes("كافل");
+                } else {
+                    matchesType = source.includes(typeValue);
+                }
+            }
+            row.style.display = (matchesSearch && matchesType && matchesDate) ? "" : "none";
+        });
+    }
+
+    function openAndMarkRead(notifId) {
+        document.getElementById('notificationModal_' + notifId).style.display = 'block';
+
+        // Using your new global cookie function here!
+        const csrfToken = getCookie('csrftoken');
+
+        fetch(`/notifications/read/${notifId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                let dot = document.getElementById('status-dot-' + notifId);
+                let row = document.getElementById('row-' + notifId);
+                let modalStatus = document.getElementById('modal-status-' + notifId);
+
+                if (dot) { dot.classList.remove('new'); dot.classList.add('old'); }
+                if (row) { row.classList.remove('table-active'); }
+                if (modalStatus) {
+                    modalStatus.style.backgroundColor = '#68AF73';
+                    modalStatus.innerText = 'مقروءة';
+                }
+            }
+        });
+    }
+
+    function markAllAsRead() {
+        const csrfToken = getCookie('csrftoken');
+
+        fetch(`/notifications/read-all/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                document.querySelectorAll('.status-indicator.new').forEach(el => {
+                    el.classList.remove('new');
+                    el.classList.add('old');
+                });
+                document.querySelectorAll('.notifications-table tr.table-active').forEach(el => {
+                    el.classList.remove('table-active');
+                });
+
+                let badge = document.querySelector('.notification-badge');
+                if (badge) badge.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

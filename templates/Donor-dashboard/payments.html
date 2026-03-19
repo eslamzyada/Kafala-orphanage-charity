@@ -1,0 +1,191 @@
+{% extends 'Donor-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}سجل المدفوعات | كفالة{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="payments-container" style="max-width: 95%; margin: 0 auto;">
+
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+            <h2 style="color: #2a756b; font-weight: bold; margin: 0;">السجل المالي للمدفوعات</h2>
+
+            <div class="search-eara"
+                style="margin: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 10px;">
+                <div type="submit" style="background: none;">
+                    <input type="text" id="searchInput" placeholder="ابحث باسم اليتيم..." onkeyup="filterPayments()"
+                        style="border: 1px solid #eee; border-radius: 5px; padding: 8px 15px;">
+                </div>
+
+                <select id="statusFilter" class="select-list-header" onchange="filterPayments()"
+                    style="border: 1px solid #eee; border-radius: 5px; padding: 8px;">
+                    <option value="">كل الحالات</option>
+                    <option value="Completed">مكتملة</option>
+                    <option value="Pending">قيد الانتظار</option>
+                    <option value="Failed">فشلت</option>
+                </select>
+
+                <select id="methodFilter" class="select-list-header" onchange="filterPayments()"
+                    style="border: 1px solid #eee; border-radius: 5px; padding: 8px;">
+                    <option value="">كل الوسائل</option>
+                    <option value="bank">تحويل بنكي</option>
+                    <option value="palpay">PalPay</option>
+                    <option value="cash">كاش</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card-body table-responsive"
+            style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <table class="table table-hover text-wrap" style="width: 100%; text-align: right;">
+                <thead style="background-color: #f8f9fa; color: #2a756b;">
+                    <tr>
+                        <th style="padding: 12px;">رقم المعاملة</th>
+                        <th style="padding: 12px;">اسم اليتيم</th>
+                        <th style="padding: 12px;">المبلغ</th>
+                        <th style="padding: 12px;">تاريخ الدفع</th>
+                        <th style="padding: 12px;">الوسيلة</th>
+                        <th style="padding: 12px;">الحالة</th>
+                        <th style="padding: 12px; text-align: center;">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr class="pay-row" style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 15px;">#{{ payment.id }}</td>
+                        <td class="pay-orphan-name" style="padding: 15px; font-weight: bold;">{{ payment.sponsorship.orphan.name }}</td>
+                        <td style="padding: 15px; color: #2a756b; font-weight: bold;">${{ payment.amount }}</td>
+                        <td style="padding: 15px;" dir="ltr">{{ payment.payment_date|date:"Y-m-d" }}</td>
+                        <td class="pay-method" style="padding: 15px;">{{ payment.payment_method }}</td>
+
+                        <td class="pay-status" data-status="{{ payment.status }}" style="padding: 15px;">
+                            <span
+                                style="font-size: 0.85rem; padding: 5px 12px; border-radius: 15px; font-weight: bold; color: white; background-color: {% if payment.status == 'Completed' %}#68AF73{% elif payment.status == 'Pending' %}#fbba04{% else %}#dc3545{% endif %};">
+                                {% if payment.status == 'Completed' %}مكتملة{% elif payment.status == 'Pending' %}قيد الانتظار{% else %}فشلت{% endif %}
+                            </span>
+                        </td>
+
+                        <td style="padding: 15px; text-align: center;">
+                            {% if payment.status == 'Completed' %}
+                            <a href="javascript:void(0);"
+                                onclick="document.getElementById('receiptModal_{{ payment.id }}').style.display='block'"
+                                style="background: #eef2f6; color: #006dff; padding: 6px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">عرض
+                                الإيصال</a>
+                            {% elif payment.status == 'Pending' %}
+                            <a href="{% url 'pay_checkout' payment.id %}"
+                                style="background: #2a756b; color: white; padding: 6px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">دفع
+                                الآن</a>
+                            {% else %}
+                            <span style="color: #ccc;">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #777; font-size: 1.1rem;">
+                            <i class="fas fa-file-invoice-dollar"
+                                style="font-size: 3rem; color: #ccc; margin-bottom: 15px; display: block;"></i>
+                            لا توجد سجلات مالية حتى الآن.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% for payment in payments %}
+{% if payment.status == 'Completed' %}
+<div id="receiptModal_{{ payment.id }}" class="modalshow"
+    style="display: none; position: fixed; z-index: 999999; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(0,0,0,0.6); overflow-y: auto;">
+    <div
+        style="background-color: white; width: 90%; max-width: 400px; margin: 10vh auto; border-radius: 12px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.4); position: relative; direction: rtl; text-align: right; overflow: hidden; border-top: 5px solid #68AF73;">
+
+        <div style="padding: 25px; color: #333;">
+            <span onclick="document.getElementById('receiptModal_{{ payment.id }}').style.display='none'"
+                style="cursor: pointer; font-size: 24px; position: absolute; left: 20px; top: 15px; color: #888;">&times;</span>
+
+            <div style="text-align: center; margin-bottom: 25px;">
+                <i class="fas fa-check-circle" style="font-size: 40px; color: #68AF73; margin-bottom: 10px;"></i>
+                <h3 style="margin: 0; font-weight: bold;">إيصال دفع إلكتروني</h3>
+                <p style="color: #777; font-size: 0.9rem; margin-top: 5px;">كفالة اليتيم: {{
+                    payment.sponsorship.orphan.name }}</p>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 0.95rem; line-height: 2;">
+                <div
+                    style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 5px;">
+                    <span>رقم المعاملة:</span> <strong>#{{ payment.id }}</strong>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 5px;">
+                    <span>تاريخ الدفع:</span> <strong dir="ltr">{{ payment.payment_date|date:"Y-m-d" }}</strong>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 5px;">
+                    <span>وسيلة الدفع:</span> <strong>{{ payment.payment_method }}</strong>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 1.2rem; color: #2a756b;">
+                    <span>المبلغ الإجمالي:</span> <strong>${{ payment.amount }}</strong>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="window.print()"
+                    style="background: #006dff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;"><i
+                        class="fas fa-print"></i> طباعة الإيصال</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function normalizeArabic(text) {
+        if (!text) return "";
+        return text.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase().trim();
+    }
+
+    function filterPayments() {
+        let searchValue = normalizeArabic(document.getElementById("searchInput").value);
+        let statusValue = document.getElementById("statusFilter").value;
+        let methodValue = document.getElementById("methodFilter").value;
+
+        let rows = document.querySelectorAll(".pay-row");
+
+        rows.forEach(row => {
+            let orphanName = normalizeArabic(row.querySelector(".pay-orphan-name").innerText);
+            let payStatus = row.querySelector(".pay-status").getAttribute("data-status");
+            let payMethod = row.querySelector(".pay-method").innerText.toLowerCase();
+
+            let matchesSearch = orphanName.includes(searchValue);
+
+            let matchesStatus = (statusValue === "") || (payStatus === statusValue);
+
+            let matchesMethod = true;
+            if (methodValue === 'bank') matchesMethod = payMethod.includes('bank') || payMethod.includes('بنك');
+            else if (methodValue === 'palpay') matchesMethod = payMethod.includes('palpay') || payMethod.includes('بال');
+            else if (methodValue === 'cash') matchesMethod = payMethod.includes('cash') || payMethod.includes('كاش');
+
+            if (matchesSearch && matchesStatus && matchesMethod) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+
+    window.onclick = function (event) {
+        if (event.target.classList.contains('modalshow')) {
+            event.target.style.display = "none";
+        }
+    }
+</script>
+{% endblock %}

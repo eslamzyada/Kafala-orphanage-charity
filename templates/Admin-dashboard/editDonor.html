@@ -1,0 +1,32 @@
+{% extends 'Admin-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}تعديل بيانات الكافل | كفالة{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="title-form">تعديل بيانات الكافل: {{ donor.name }}</div>
+
+    <form method="POST" action="">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <div class="the-name">
+                <input type="text" name="name" value="{{ donor.name }}" placeholder="الاسم الكامل" required>
+            </div>
+            <div class="the-aria">
+                <input type="email" name="email" value="{{ donor.email }}" placeholder="البريد الإلكتروني" required>
+            </div>
+            <div class="the-age">
+                <input type="text" name="phone" value="{{ donor.phone|default:'' }}" placeholder="رقم الهاتف">
+            </div>
+        </div>
+
+        <div class="file-upload-container">
+            <button type="submit" class="add-orphan">حفظ التعديلات</button>
+            <a href="{% url 'manage_donors' %}" class="cancle-btn"
+                style="text-decoration: none; padding: 10px 20px; display: inline-block;">إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

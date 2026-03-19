@@ -1,0 +1,11 @@
+{
+    "venvPath": "c:/Users/MS/orphanage_backend",
+    "venv": "venv",
+    "pythonVersion": "3.12",
+    "executionEnvironments": [
+        {
+            "root": ".",
+            "extraPaths": ["."]
+        }
+    ]
+}

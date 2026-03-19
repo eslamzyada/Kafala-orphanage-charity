@@ -1,0 +1,197 @@
+{% extends 'Admin-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}إدارة الكفالات | كفالة{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <p class="title-guarantee">إدارة الكفالات</p>
+
+    <div class="search-eara">
+        <div type="submit">
+            <input type="text" id="searchInput" placeholder="ابحث باسم الكافل أو اليتيم..."
+                onkeyup="filterSponsorships()">
+        </div>
+
+        <select id="typeFilter" class="select-list-header" onchange="filterSponsorships()">
+            <option value="">نوع الكفالة (الكل)</option>
+            <option value="financial">مالي</option>
+            <option value="educational">تعليمي</option>
+            <option value="health">صحي</option>
+        </select>
+
+        <select id="statusFilter" class="select-list-header" onchange="filterSponsorships()">
+            <option value="">حالة الكفالة (الكل)</option>
+            <option value="Pending">بإنتظار الموافقة</option>
+            <option value="Active">نشطة</option>
+            <option value="Ended">منتهية</option>
+        </select>
+    </div>
+
+    <div class="card-body table-responsive" style="max-width: 90%; margin-right: 15px;">
+        <table class="table table-hover text-wrap table-lg" style="border-radius: 10px; overflow: hidden;">
+            <thead>
+                <tr>
+                    <th>رقم الكفالة</th>
+                    <th>أسم الكافل</th>
+                    <th>إسم اليتيم</th>
+                    <th>نوع الكفالة</th>
+                    <th>المبلغ الشهري</th>
+                    <th>تاريخ البدء</th>
+                    <th>تاريخ الإنتهاء</th>
+                    <th>حالة الكفالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sponsorship in sponsorships %}
+                <tr class="spon-row">
+                    <td>{{ sponsorship.id }}</td>
+                    <td class="spon-donor">{{ sponsorship.donor.name }}</td>
+                    <td class="spon-orphan">{{ sponsorship.orphan.name }}</td>
+                    <td class="spon-type">{{ sponsorship.get_sponsorship_type_display }}</td>
+                    <td>${{ sponsorship.amount }}</td>
+                    <td>{{ sponsorship.start_date|date:"Y-m-d" }}</td>
+                    <td>{{ sponsorship.end_date|date:"Y-m-d"|default:"-" }}</td>
+
+                    <td class="spon-status" data-status="{{ sponsorship.status }}">
+                        <span
+                            style="font-weight: bold; color: {% if sponsorship.status == 'Active' %}#68AF73{% elif sponsorship.status == 'Pending' %}#fbba04{% else %}#888{% endif %};">
+                            {{ sponsorship.get_status_display }}
+                        </span>
+                    </td>
+
+                    <td class="stutes">
+                        <a href="javascript:void(0);" class="show-guarantee" style="text-decoration:none;"
+                            onclick="document.getElementById('sponModal_{{ sponsorship.id }}').style.display='block'">عرض</a>
+
+                        {% if sponsorship.status == 'Pending' %}
+                        <form method="POST" action="{% url 'accept_sponsorship' sponsorship.id %}"
+                            style="display:inline;">{% csrf_token %}
+                            <button type="submit" class="accept-guarantee"
+                                style="border:none; cursor:pointer;">قبول</button>
+                        </form>
+                        <form method="POST" action="{% url 'reject_sponsorship' sponsorship.id %}"
+                            style="display:inline;">{% csrf_token %}
+                            <button type="submit" class="delete-orphan"
+                                style="border:none; cursor:pointer;">رفض</button>
+                        </form>
+
+                        {% elif sponsorship.status == 'Active' %}
+                        <form method="POST" action="{% url 'end_sponsorship' sponsorship.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="end-guarantee"
+                                style="border:none; cursor:pointer; background-color:#ff9800; color:white; padding: 4px 10px; border-radius:15px; font-size:14px;">إنهاء</button>
+                        </form>
+                        <form method="POST" action="{% url 'delete_sponsorship' sponsorship.id %}"
+                            style="display:inline;">{% csrf_token %}
+                            <button type="submit" class="delete-orphan" style="border:none; cursor:pointer;"
+                                onclick="return confirm('حذف الكفالة نهائياً؟')">حذف</button>
+                        </form>
+
+                        {% else %}
+                        <form method="POST" action="{% url 'renew_sponsorship' sponsorship.id %}"
+                            style="display:inline;">{% csrf_token %}
+                            <button type="submit" class="renew-guarantee"
+                                style="border:none; cursor:pointer; background-color:#17a2b8; color:white; padding: 4px 10px; border-radius:15px; font-size:14px;">تجديد</button>
+                        </form>
+                        <form method="POST" action="{% url 'delete_sponsorship' sponsorship.id %}"
+                            style="display:inline;">{% csrf_token %}
+                            <button type="submit" class="delete-orphan" style="border:none; cursor:pointer;"
+                                onclick="return confirm('حذف الكفالة نهائياً؟')">حذف</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center" style="padding: 40px; color: #777; font-weight: bold;">لا يوجد
+                        كفالات مسجلة حالياً</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% for sponsorship in sponsorships %}
+<div id="sponModal_{{ sponsorship.id }}" class="modalshow"
+    style="display: none; position: fixed; z-index: 999999; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(0,0,0,0.6); overflow-y: auto;">
+    <div
+        style="background-color: white; width: 90%; max-width: 550px; margin: 10vh auto; border-radius: 12px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.4); position: relative; direction: rtl; text-align: right; overflow: hidden;">
+
+        <div
+            style="background-color: #2a756b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; font-weight: bold; font-size: 1.2rem;">تفاصيل الكفالة #{{ sponsorship.id }}</h4>
+            <span onclick="document.getElementById('sponModal_{{ sponsorship.id }}').style.display='none'"
+                style="cursor: pointer; font-size: 28px; line-height: 1;">&times;</span>
+        </div>
+
+        <div style="padding: 25px; color: #333;">
+            <div
+                style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <p style="margin: 0;"><strong>اسم الكافل:</strong> {{ sponsorship.donor.name }}</p>
+                <p style="margin: 0;"><strong>اسم اليتيم:</strong> {{ sponsorship.orphan.name }}</p>
+            </div>
+            <div
+                style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <p style="margin: 0;"><strong>نوع الكفالة:</strong> {{ sponsorship.get_sponsorship_type_display }}</p>
+                <p style="margin: 0;"><strong>المبلغ الشهري:</strong> ${{ sponsorship.amount }}</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <p style="margin: 0;"><strong>تاريخ البدء:</strong> {{ sponsorship.start_date|date:"Y-m-d" }}</p>
+                <p style="margin: 0;"><strong>تاريخ الانتهاء:</strong> {{ sponsorship.end_date|date:"Y-m-d"|default:"غير
+                    محدد" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block extra_scripts %}
+<script>
+    function normalizeArabic(text) {
+        if (!text) return "";
+        return text.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase().trim();
+    }
+
+    function filterSponsorships() {
+        let searchValue = normalizeArabic(document.getElementById("searchInput").value);
+        let typeValue = document.getElementById("typeFilter").value; // Now uses English keys
+        let statusValue = document.getElementById("statusFilter").value;
+
+        let rows = document.querySelectorAll(".spon-row");
+
+        rows.forEach(row => {
+            let donorName = normalizeArabic(row.querySelector(".spon-donor").innerText);
+            let orphanName = normalizeArabic(row.querySelector(".spon-orphan").innerText);
+            let sponType = row.querySelector(".spon-type").innerText.toLowerCase(); // Read the raw table text
+            let sponStatus = row.querySelector(".spon-status").getAttribute("data-status");
+
+            // 1. Search Check
+            let matchesSearch = donorName.includes(searchValue) || orphanName.includes(searchValue);
+
+            // 2. Bilingual Type Check (The Fix!)
+            let matchesType = true;
+            if (typeValue === 'financial') {
+                matchesType = sponType.includes('financial') || sponType.includes('مالي');
+            } else if (typeValue === 'educational') {
+                matchesType = sponType.includes('educational') || sponType.includes('تعليمي');
+            } else if (typeValue === 'health') {
+                matchesType = sponType.includes('health') || sponType.includes('medical') || sponType.includes('صحي');
+            }
+
+            // 3. Strict Status Check
+            let matchesStatus = (statusValue === "") || (sponStatus === statusValue);
+
+            // Apply filter
+            if (matchesSearch && matchesType && matchesStatus) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}

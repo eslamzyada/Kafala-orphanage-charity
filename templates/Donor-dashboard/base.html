@@ -1,0 +1,281 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <title>{% block title %}منصة كفالة لرعاية الأيتام{% endblock %}</title>
+    <meta name="description"
+        content="{% block meta_description %}منصة كفالة الإلكترونية الموثوقة لربط الكفلاء بالأيتام. تبرع الآن، تابع حالة يتيمك، وساهم في بناء مستقبل مشرق عبر بوابة دفع آمنة 100%.{% endblock %}">
+    <meta property="og:title" content="منصة كفالة | أثر يدوم.. أجر باقٍ">
+    <meta property="og:description" content="ساهم في تغيير حياة يتيم اليوم. منصة متكاملة للكفالة والدفع الإلكتروني.">
+    <meta property="og:image" content="{% static 'img/img/1745048934591-pica.png' %}">
+    <meta property="og:url" content="https://www.kafala-ngo.org">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" href="{% static 'img/1745048934591-pica.png' %}" type="image/png">
+</head>
+
+<body>
+    <div class="all-bage d-flex">
+
+        <button id="sidebar-toggle" class="burger-btn">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <div id="sidebar" class="sidebar">
+            <div class="profile">
+                <a href="{% url 'sponsor_dashboard' %}" style="text-decoration: none; color: inherit;">
+                    <div class="profile-img">
+                        {% if donor.image %}
+                        <img src="{{ donor.image.url }}" alt="Logo"
+                            style="border-radius: 50%; object-fit: cover; width: 45px; height: 45px;">
+                        {% else %}
+                        <img src="{% static 'img/1745048934591-pica.png' %}" alt="Logo">
+                        {% endif %}
+                        كفالة
+                    </div>
+                </a>
+            </div>
+            <hr>
+            <div class="menu">
+                <a href="{% url 'sponsor_dashboard' %}">
+                    <div
+                        class="menu-item {% if request.resolver_match.url_name == 'sponsor_dashboard' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-home"></i></span><span> الرئيسية</span>
+                    </div>
+                </a>
+                <a href="{% url 'donor_sponsorships' %}">
+                    <div
+                        class="menu-item {% if request.resolver_match.url_name == 'donor_sponsorships' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-file"></i></span><span>إدارة الكفالات</span>
+                    </div>
+                </a>
+                <a href="{% url 'donor_orphans' %}">
+                    <div class="menu-item {% if request.resolver_match.url_name == 'donor_orphans' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-users"></i></span><span>عرض الأيتام</span>
+                    </div>
+                </a>
+
+                <a href="{% url 'donor_payments' %}">
+                    <div
+                        class="menu-item {% if request.resolver_match.url_name == 'donor_payments' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-wallet"></i></span><span>سجل المدفوعات</span>
+                    </div>
+                </a>
+
+                <a href="{% url 'donor_notifications' %}">
+                    <div
+                        class="menu-item {% if request.resolver_match.url_name == 'donor_notifications' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-bell"></i></span><span> الإشعارات </span>
+                    </div>
+                </a>
+            </div>
+            <hr>
+            <div>
+                <a href="{% url 'donor_edit_profile' %}">
+                    <div
+                        class="menu-item {% if request.resolver_match.url_name == 'donor_edit_profile' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-cog"></i></span><span>تعديل الحساب</span>
+                    </div>
+                </a>
+                <a href="javascript:void(0);" onclick="document.getElementById('logoutForm').submit();"
+                    style="text-decoration: none; color: inherit;">
+                    <div class="menu-item">
+                        <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span><span> تسجيل خروج</span>
+                    </div>
+                </a>
+                <form id="logoutForm" action="{% url 'logout_view' %}" method="POST" style="display: none;">
+                    {% csrf_token %}
+                </form>
+            </div>
+        </div>
+
+        <div class="container">
+            <nav class="navbar">
+                <form class="search-container" action="{% url 'donor_orphans' %}" method="GET">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                    <input type="text" name="q" placeholder="ابحث عن يتيم...">
+                </form>
+
+                <div style="display: flex; align-items: center; position: relative;" class="ff1">
+
+                    <div class="bill" id="bellIcon" style="cursor: pointer; position: relative;">
+                        <i class="fas fa-bell"></i>
+                        {% if unread_count and unread_count > 0 %}
+                        <span class="notification-badge"
+                            style="position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px;">{{
+                            unread_count }}</span>
+                        {% endif %}
+
+                        <div class="notification-panel" id="notificationPanel"
+                            style="display: none; position: absolute; top: 120%; left: 0; background: white; border: 1px solid #eee; border-radius: 8px; width: 300px; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: default;">
+                            <h5
+                                style="margin: 15px; color: #2a756b; font-weight: bold; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                                أحدث الإشعارات</h5>
+
+                            {% for notif in recent_notifications %}
+                            <div class="notification-item"
+                                style="padding: 10px 15px; border-bottom: 1px solid #eee; {% if not notif.is_read %}background-color: #f0f7ff;{% endif %}">
+                                <div class="notification-title"
+                                    style="font-weight: bold; color: #333; font-size: 0.9rem;">
+                                    {% if notif.title %}{{ notif.title }}{% else %}{{ notif.message|default:"-"|truncatechars:40 }}{% endif %}
+                                </div>
+                                <div class="notification-message"
+                                    style="font-size: 0.8rem; color: #555; margin: 5px 0;">
+                                    {% if notif.message %}{{ notif.message|truncatechars:45 }}{% else %}-{% endif %}
+                                </div>
+                                <div class="notification-time" style="font-size: 0.75rem; color: #999;" dir="ltr">
+                                    {{ notif.created_at|time:"h:i A" }}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="notification-item"
+                                style="padding: 15px; text-align: center; color: gray; font-size: 0.9rem;">
+                                لا توجد إشعارات جديدة
+                            </div>
+                            {% endfor %}
+
+                            <a href="{% url 'donor_notifications' %}"
+                                style="display: block; text-align: center; padding: 12px; font-size: 0.9rem; text-decoration: none; font-weight: bold; color: #2a756b; background: #f9f9f9; border-radius: 0 0 8px 8px;">عرض
+                                كل الإشعارات</a>
+                        </div>
+                    </div>
+
+                    <div class="line-img" style="margin: 0 15px; border-left: 1px solid #ccc; height: 30px;"></div>
+
+                    <div class="logo" id="profileIcon"
+                        style="cursor: pointer; position: relative; display: flex; align-items: center; gap: 10px;">
+                        {% if donor.image %}
+                        <img src="{{ donor.image.url }}" alt="Logo" height="40"
+                            style="border-radius: 50%; object-fit: cover; width: 40px;">
+                        {% else %}
+                        <img src="{% static 'img/Circle.png' %}" alt="Logo" height="40" style="border-radius: 50%;">
+                        {% endif %}
+
+                        <p class="img-name" style="margin: 0; line-height: 1.2;">
+                            <span dir="rtl" style="display:inline-block;">{% firstof donor.name request.user.first_name
+                                %}</span><br>
+                            <span dir="rtl" style="display:inline-block; font-size: 0.8rem; color: #777;">كافل</span>
+                        </p>
+
+                        <div class="profile-panel" id="profilePanel"
+                            style="display: none; position: absolute; top: 120%; left: 0; background: white; border: 1px solid #eee; border-radius: 8px; width: 250px; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.2); padding: 15px; cursor: default;">
+                            <div class="profile-header"
+                                style="display: flex; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                                {% if donor.image %}
+                                <img src="{{ donor.image.url }}" alt="صورة المستخدم"
+                                    style="border-radius: 50%; object-fit: cover; width: 55px; height: 55px;">
+                                {% else %}
+                                <img src="{% static 'img/Circle.png' %}" alt="صورة افتراضية"
+                                    style="width: 55px; height: 55px; border-radius: 50%;">
+                                {% endif %}
+                                <div class="profile-info" style="margin-right: 15px;">
+                                    <h4 style="font-size: 1.1rem; margin: 0; color: #333;"><span dir="rtl">{% firstof
+                                            donor.name request.user.first_name %}</span></h4>
+                                    <p style="font-size: 0.85rem; margin: 5px 0 0 0; color: #777;">كافل مسجل</p>
+                                </div>
+                            </div>
+
+                            <div class="profile-details" style="font-size: 0.9rem; color: #555; line-height: 2;">
+                                <p style="margin: 0;"><i class="fas fa-envelope"
+                                        style="width: 25px; color: #2a756b;"></i> <span dir="ltr">{{ request.user.email }}</span></p>
+                                <p style="margin: 0;"><i class="fas fa-phone" style="width: 25px; color: #2a756b;"></i>
+                                    <span dir="ltr">{{ donor.phone|default:"غير متوفر" }}</span>
+                                </p>
+                            </div>
+
+                            <form action="{% url 'logout_view' %}" method="POST" style="margin: 0; margin-top: 15px;">
+                                {% csrf_token %}
+                                <button type="submit" class="logout-btn"
+                                    style="width: 100%; background: #dc3545; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+                                    <i class="fas fa-sign-out-alt" style="margin-left: 8px;"></i> تسجيل الخروج
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            {% block content %}
+            {% endblock %}
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const bellIcon = document.getElementById('bellIcon');
+            const notificationPanel = document.getElementById('notificationPanel');
+            const profileIcon = document.getElementById('profileIcon');
+            const profilePanel = document.getElementById('profilePanel');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.getElementById('sidebar');
+
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    sidebar.classList.toggle('active');
+                });
+            }
+
+            if (bellIcon && notificationPanel) {
+                bellIcon.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    notificationPanel.style.display = notificationPanel.style.display === 'block' ? 'none' : 'block';
+                    if (profilePanel) profilePanel.style.display = 'none';
+                });
+            }
+
+            if (profileIcon && profilePanel) {
+                profileIcon.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    profilePanel.style.display = profilePanel.style.display === 'block' ? 'none' : 'block';
+                    if (notificationPanel) notificationPanel.style.display = 'none';
+                });
+            }
+
+            document.addEventListener('click', function (e) {
+                if (notificationPanel && !notificationPanel.contains(e.target) && !bellIcon.contains(e.target)) {
+                    notificationPanel.style.display = 'none';
+                }
+                if (profilePanel && !profilePanel.contains(e.target) && !profileIcon.contains(e.target)) {
+                    profilePanel.style.display = 'none';
+                }
+                if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('active') && !sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('active');
+                }
+            });
+
+            if (notificationPanel) notificationPanel.addEventListener('click', e => e.stopPropagation());
+            if (profilePanel) profilePanel.addEventListener('click', e => e.stopPropagation());
+            if (sidebar) sidebar.addEventListener('click', e => e.stopPropagation());
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+
+    <script src="{% static 'js/bootstrap.bundle.js' %}"></script>
+    <script src="{% static 'js/main.js' %}?v=2"></script>
+    {% block scripts %}{% endblock %}
+    {% include 'includes/ai_widget.html' %}
+</body>
+</body>
+
+</html>

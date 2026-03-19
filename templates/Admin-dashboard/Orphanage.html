@@ -1,0 +1,154 @@
+{% extends 'Admin-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}إدارة الأيتام | كفالة{% endblock %}
+
+{% block content %}
+<div class="title-content container">
+    <p class="head-title">إدارة الأيتام</p>
+    <a href="{% url 'add_orphan' %}" class="add-orphanage"> <i class="fas fa-add add-btn"></i>إضافة يتيم</a>
+</div>
+
+<div class="search-eara">
+    <div type="submit">
+        <input type="text" id="searchInput" placeholder="ابحث باسم اليتيم..." onkeyup="filterOrphans()">
+    </div>
+
+    <select id="genderFilter" class="select-list-header" onchange="filterOrphans()">
+        <option value="">الجنس (الكل)</option>
+        <option value="male">ذكر</option>
+        <option value="female">انثى</option>
+    </select>
+
+    <select id="socialFilter" class="select-list-header" onchange="filterOrphans()">
+        <option value="">الحالة الاجتماعية (الكل)</option>
+        <option value="father">يتيم الأب</option>
+        <option value="both">يتيم الأبوين</option>
+    </select>
+
+    <select id="healthFilter" class="select-list-header" onchange="filterOrphans()">
+        <option value="">الحالة الصحية (الكل)</option>
+        <option value="healthy">سليم / ممتازة / جيدة</option>
+        <option value="sick">غير سليم / مريض / احتياجات</option>
+    </select>
+</div>
+
+<div class="card-body table-responsive" style="max-width: 90%; margin-right: 15px;">
+    <table class="table table-hover text-wrap table-lg" id="orphansTable"
+        style="border-radius: 10px; overflow: hidden;">
+        <thead>
+            <tr>
+                <th>رقم اليتيم</th>
+                <th>الصورة</th>
+                <th>الأسم</th>
+                <th>تاريخ الميلاد</th>
+                <th>الجنس</th>
+                <th>المنطقة</th>
+                <th>الحالة الإجتماعية</th>
+                <th>الحالة الصحية</th>
+                <th>حالة الكفالة</th>
+                <th rowspan="2">الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for orphan in orphans %}
+            <tr class="orphan-row">
+                <td>{{ orphan.id }}</td>
+                <td>
+                    <img src="{% static 'img/Group 2987.png' %}" alt="صورة اليتيم"
+                        style="width: 40px; height: 40px; border-radius: 50%;">
+                </td>
+                <td class="orphan-name">{{ orphan.name }}</td>
+                <td>{{ orphan.age }} سنة</td>
+                <td class="orphan-gender">{{ orphan.gender|default:"-" }}</td>
+                <td>{{ orphan.area|default:"-" }}</td>
+                <td class="orphan-social">{{ orphan.social_status|default:"-" }}</td>
+                <td class="orphan-health">{{ orphan.health_status|default:"-" }}</td>
+
+                {% if orphan.sponsorship_status == 'Sponsored' %}
+                <td style="color: #68AF73; font-weight: bold;">مكفول</td>
+                {% else %}
+                <td style="color: #fbba04; font-weight: bold;">متاح للكفالة</td>
+                {% endif %}
+
+                <td class="stutes">
+                    <a href="{% url 'admin_orphan_details' orphan.id %}" class="show-orphan"
+                        style="text-decoration: none;">عرض</a>
+                    <form method="POST" action="{% url 'delete_orphan' orphan.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="delete-orphan"
+                            style="border:none; cursor:pointer; background:none;"
+                            onclick="return confirm('هل أنت متأكد من حذف هذا اليتيم نهائياً؟')">حذف</button>
+                    </form>
+                </td>
+            </tr>
+
+            {% empty %}
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 40px; color: #777; font-weight: bold;">
+                    لا يوجد أيتام مسجلين في النظام حالياً.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% block extra_scripts %}
+<script>
+    function normalizeArabic(text) {
+        if (!text) return "";
+        return text.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase().trim();
+    }
+
+    function filterOrphans() {
+        let searchValue = normalizeArabic(document.getElementById("searchInput").value);
+        let genderValue = document.getElementById("genderFilter").value;
+        let socialValue = document.getElementById("socialFilter").value;
+        let healthValue = document.getElementById("healthFilter").value;
+
+        let rows = document.querySelectorAll(".orphan-row");
+
+        rows.forEach(row => {
+            let name = normalizeArabic(row.querySelector(".orphan-name").innerText);
+            let gender = row.querySelector(".orphan-gender").innerText.toLowerCase();
+            let socialStatus = normalizeArabic(row.querySelector(".orphan-social").innerText);
+            let healthStatus = row.querySelector(".orphan-health").innerText.toLowerCase();
+
+            let matchesSearch = name.includes(searchValue);
+
+            let matchesGender = true;
+            if (genderValue === 'male') {
+                matchesGender = gender.includes('male') || gender.includes('ذكر');
+            } else if (genderValue === 'female') {
+                matchesGender = gender.includes('female') || gender.includes('انثى') || gender.includes('أنثى');
+            }
+
+            let matchesSocial = true;
+            if (socialValue === 'father') {
+                matchesSocial = socialStatus === normalizeArabic("يتيم الأب");
+            } else if (socialValue === 'both') {
+                matchesSocial = socialStatus === normalizeArabic("يتيم لأبوين");
+            }
+
+            let matchesHealth = true;
+            if (healthValue === 'healthy') {
+                matchesHealth = (healthStatus.includes('سليم') && !healthStatus.includes('غير')) ||
+                    healthStatus.includes('ممتاز') ||
+                    healthStatus.includes('جيد');
+            } else if (healthValue === 'sick') {
+                matchesHealth = healthStatus.includes('غير سليم') ||
+                    healthStatus.includes('مريض') ||
+                    healthStatus.includes('احتياج');
+            }
+
+            if (matchesSearch && matchesGender && matchesSocial && matchesHealth) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}

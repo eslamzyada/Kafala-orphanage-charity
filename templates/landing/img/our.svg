@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="150" height="150" viewBox="0 0 150 150">
+  <defs>
+    <clipPath id="clip-path">
+      <circle id="Ellipse_2" data-name="Ellipse 2" cx="75" cy="75" r="75" transform="translate(869 2345)" fill="#b0b0b0"/>
+    </clipPath>
+    <clipPath id="clip-path-2">
+      <circle id="Ellipse_115" data-name="Ellipse 115" cx="58" cy="58" r="58" transform="translate(783.667 1688.875)" fill="#fff" stroke="#707070" stroke-width="1"/>
+    </clipPath>
+  </defs>
+  <g id="Mask_Group_10" data-name="Mask Group 10" transform="translate(-869 -2345)" clip-path="url(#clip-path)">
+    <g id="Group_1243" data-name="Group 1243" transform="translate(102.333 673.125)">
+      <g id="Group_126" data-name="Group 126">
+        <circle id="Ellipse_18" data-name="Ellipse 18" cx="75" cy="75" r="75" transform="translate(766.667 1671.875)" fill="#2b726e"/>
+        <g id="Mask_Group_15" data-name="Mask Group 15" clip-path="url(#clip-path-2)">
+          <g id="payment-card-svgrepo-com" transform="translate(790.066 1693.125)">
+            <rect id="Rectangle_31" data-name="Rectangle 31" width="77.4" height="55.9" rx="8.6" transform="translate(12.9 25.8)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="8.6"/>
+            <path id="Path_207" data-name="Path 207" d="M12.9,43H88.15" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="8.6"/>
+            <path id="Path_208" data-name="Path 208" d="M30.1,64.5h8.6" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="8.6"/>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

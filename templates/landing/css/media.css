@@ -1,0 +1,100 @@
+@media (max-width: 450px) {
+    .title-hero{
+        font-size: 18px;
+        margin-top: 30px;
+    }
+    .subtitle-hero{
+        font-size: 14px;
+    }
+    .box{
+        margin-top: 20px;
+    }
+    .position{
+        top: -10px;
+        right: -10px;
+    }
+    .position img{
+        width: 50px;
+        height: 50px;
+    }
+    .title-q{
+        font-size: 16px;
+    }
+    .centerd{
+        width: 90%;
+    }
+    .how-section{
+        margin-bottom: 50px;
+    }
+    .img-donaion{
+        margin-top: 20px;
+    }
+    .principles{
+        margin-top: 50px;
+    }
+    /*------*/
+    .img-hero{
+        margin-top: 60px;
+    }
+    .img-contact{
+        margin-bottom: 50px;
+    }
+    .modal-content{
+        width: 90%;
+    }
+    .user-inputs{
+        height: 35px;
+    }
+    .login-btn{
+        height: 35px;
+    }
+    .m1{
+    margin-right: 0;
+    }
+    .title-section{
+        margin-top: 20px;
+    }
+}
+@media (max-width: 768px) {
+    .box{
+        margin-top: 20px;
+    }
+    .position{
+        top: -10px;
+        right: -10px;
+    }
+    .position img{
+        width: 50px;
+        height: 50px;
+    }
+    .title-q{
+        font-size: 16px;
+    }
+    .centerd{
+        width: 90%;
+    }
+    .how-section{
+        margin-bottom: 50px;
+    }
+    .img-donaion{
+        margin-top: 20px;
+    }
+    .principles{
+        margin-top: 50px;
+    }
+    /*------*/
+    .img-hero, .about-img{
+        margin-top: 20px;
+    }
+    .m1{
+    margin-right: 0;
+    }
+    .title-section{
+        margin-top: 20px;
+    }
+}
+@media (max-width: 992px) {
+    .box{
+        margin-top: 20px;
+    }
+}

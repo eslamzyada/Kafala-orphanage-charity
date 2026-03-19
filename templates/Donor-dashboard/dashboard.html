@@ -1,0 +1,63 @@
+{% extends 'Donor-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}لوحة الكافل - الرئيسية{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="header-donor">
+        <div class="welcome-message">
+            مرحباً بك : <span>{{ donor.name|default:user.first_name|default:"الكافل" }}</span> <br>
+            <p class="text-message">يسعدنا دعمك و مساهمتك في كفالة الأيتام</p>
+        </div>
+        <div class="donor-container">
+            <div class="stat-card">
+                <div class="stat-title">الأيتام المكفولين</div>
+                <div class="stat-number">
+                    <img class="card-icon" src="{% static 'img/users-three-Filled.png' %}" alt="">
+                    <span class="counter" data-target="{{ sponsored_count|default:'0' }}">{{ sponsored_count|default:0 }}</span> +
+                </div>
+                <div class="stat-description">{{ sponsored_count|default:0 }} أيتام تمت كفالتهم</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-title">الأيتام المتاحين للكفالة</div>
+                <div class="stat-number">
+                    <img class="card-icon" src="{% static 'img/user-Filled.png' %}" alt="">
+                    <span class="counter" data-target="{{ available_count|default:'0' }}">{{ available_count|default:0 }}</span> +
+                </div>
+                <div class="stat-description">يوجد حالياً {{ available_count|default:0 }} يتيمًا بانتظار الكفالة</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.counter').forEach(counter => {
+        const targetAttr = counter.getAttribute('data-target');
+        const target = targetAttr ? parseInt(targetAttr, 10) : 0;
+
+        if (isNaN(target) || target === 0) {
+            counter.textContent = 0;
+            return;
+        }
+
+        let current = 0;
+        const increment = Math.max(1, Math.ceil(target / 50));
+
+        const updateCounter = () => {
+            current += increment;
+            if (current < target) {
+                counter.textContent = Math.floor(current);
+                setTimeout(updateCounter, 30);
+            } else {
+                counter.textContent = target;
+            }
+        };
+
+        updateCounter();
+    });
+</script>
+{% endblock %}

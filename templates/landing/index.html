@@ -1,0 +1,741 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>كفالة | أثر يدوم.. أجر باقٍ</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/all.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/landing-style.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/media.css' %}" />
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+    <style>
+        :root {
+            --primary-color: #2a756b;
+            --secondary-color: #006dff;
+            --accent-color: #D69E2E;
+            --dark-text: #1A365D;
+            --light-text: #666666;
+            --bg-color: #F7FAFC;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif !important;
+            background-color: var(--bg-color);
+            color: var(--dark-text);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: 'Tajawal', sans-serif !important;
+            font-weight: 700;
+        }
+
+        /* --- Navbar Upgrade --- */
+        .navbar {
+            background: white !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            padding: 10px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-nav .nav-link {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--dark-text) !important;
+            transition: 0.3s;
+            margin: 0 10px;
+        }
+
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link.active {
+            color: var(--primary-color) !important;
+        }
+
+        .buttons .log {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 8px 25px;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+
+        .buttons .sign {
+            background: var(--primary-color);
+            border: none;
+            color: white;
+            padding: 8px 25px;
+            border-radius: 8px;
+            font-weight: 700;
+            margin-right: 10px;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(42, 117, 107, 0.2);
+        }
+
+        .buttons .log:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .buttons .sign:hover {
+            background: #1f5a52;
+            transform: translateY(-2px);
+        }
+
+        /* --- Hero Section Upgrade --- */
+        .hero-section {
+            padding: 80px 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(247, 250, 252, 0.9) 100%);
+            min-height: 85vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .title-head {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .live {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            margin-bottom: 25px;
+        }
+
+        .content-hero p {
+            font-size: 1.15rem;
+            color: var(--light-text);
+            line-height: 1.8;
+            margin-bottom: 35px;
+        }
+
+        .buttonTabs button {
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            transition: 0.3s;
+        }
+
+        .know {
+            background: white;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .yatem {
+            background: var(--accent-color);
+            border: none;
+            color: white;
+            box-shadow: 0 5px 15px rgba(214, 158, 46, 0.3);
+            margin-right: 15px;
+        }
+
+        .know:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .yatem:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(214, 158, 46, 0.4);
+            background: #b78627;
+        }
+
+        /* --- Global Sections Upgrade --- */
+        section {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .principles-section {
+            background: var(--bg-color);
+        }
+
+        .title-section,
+        .title-sec,
+        .title-contact {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--dark-text);
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .title-section::after,
+        .title-sec::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: var(--accent-color);
+            margin: 15px auto 0 auto;
+            border-radius: 2px;
+        }
+
+        .content-about,
+        .principles-section p {
+            font-size: 1.1rem;
+            color: var(--light-text);
+            line-height: 1.9;
+        }
+
+        /* --- Cards Upgrade (Services) --- */
+        .card {
+            border: 1px solid #eee;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+            transition: 0.3s;
+            margin-bottom: 30px;
+            background: white;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+            border-color: var(--primary-color);
+        }
+
+        .card-img-top {
+            height: 220px;
+            object-fit: cover;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .card-text {
+            color: var(--light-text);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        /* --- Contact & Footer --- */
+        .contact-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 8px;
+            font-weight: 800;
+            transition: 0.3s;
+            margin-top: 15px;
+        }
+
+        .contact-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(214, 158, 46, 0.4);
+        }
+
+        .footer-details {
+            background: var(--primary-color);
+            color: white;
+            padding: 25px 0;
+            font-size: 0.95rem;
+        }
+
+        .footer-details p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        /* --- Modals Premium Upgrade --- */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+            padding: 35px;
+        }
+
+        .title-modal {
+            color: var(--primary-color);
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .user-inputs,
+        #userType {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 15px;
+            width: 100%;
+            margin-bottom: 15px;
+            transition: 0.3s;
+            font-family: 'Tajawal', sans-serif;
+            outline: none;
+        }
+
+        .user-inputs:focus,
+        #userType:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(42, 117, 107, 0.1);
+        }
+
+        .login-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1.05rem;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #1f5a52;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(42, 117, 107, 0.3);
+        }
+
+        .closee,
+        .close {
+            font-size: 1.8rem;
+            margin-top: -15px;
+            transition: 0.2s;
+        }
+
+        .closee:hover,
+        .close:hover {
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'index' %}">
+                <img src="{% static 'img/loho.png' %}" width="80" height="80" alt="شعار كفالة" />
+            </a>
+
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="{% url 'index' %}#home">الرئيسية</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'index' %}#about">من نحن</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'index' %}#principles">مبادئنا</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'index' %}#services">خدماتنا</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#contact">تواصل معنا</a>
+                </li>
+            </ul>
+            <div class="buttons">
+                <div class="buttons">
+                    <button class="sign"
+                        onclick="document.getElementById('myModalRegister').style.display='block'">تسجيل حساب</button>
+                    <button class="log" onclick="document.getElementById('myModal').style.display='block'">دخول</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero-section" id="home">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div class="content-hero" data-aos="zoom-in" data-aos-duration="1000">
+                        <h3 class="title-head">كفالة</h3>
+                        <h4 class="live">حياة تبدأ بالعطاء</h4>
+                        <p>
+                            نحن في كفالة نؤمن بأن العطاء هو أساس الحياة. نسعى من خلال
+                            مبادرتنا لدعم الأيتام وتوفير حياة كريمة لهم مليئة بالأمل والفرص.
+                            انضم إلينا اليوم لنصنع معًا فرقًا في حياة الأطفال المحتاجين.
+                        </p>
+                        <div class="buttonTabs">
+                            <a href="{% url 'details' %}"><button class="know">اعرف أكثر</button></a>
+                            <a href="{% url 'details' %}" style="text-decoration: none;">
+                                <button class="yatem">اكفل يتيم</button>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div class="content-hero" data-aos="zoom-in" data-aos-duration="1000">
+                        <img src="{% static 'img/undraw_true-friends_i66s.svg' %}" alt="" class="img-fluid" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="about-section" id="about">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div class="text-center" data-aos="zoom-in" data-aos-duration="1000">
+                        <img src="{% static 'img/loho.png' %}" alt="" class="img-fluid" style="max-width: 80%;" />
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div>
+                        <h3 class="title-section" data-aos="zoom-in" data-aos-duration="1000">
+                            من نحن ولماذا كفالة ؟
+                        </h3>
+                        <p class="content-about" data-aos="zoom-in" data-aos-duration="1000">
+                            نحن في "كفالة" نوفّر منصة سهلة وآمنة لتمكين الأفراد والمؤسسات من
+                            دعم الأيتام ، نهدف لإحداث تغيير حقيقي في حياة الأطفال المحتاجين
+                            عبر فرص كفالة موثوقة ، نسهّل اختيار اليتيم ودعمه في مسيرته نحو
+                            مستقبل أفضل ، في "كفالة"، نؤمن أن العطاء هو بداية لحياة مليئة
+                            بالأمل.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="principles-section" id="principles">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div class="text-center" data-aos="zoom-in" data-aos-duration="1000">
+                        <img src="{% static 'img/goals.svg' %}" alt="" class="img-fluid"
+                            style="max-width: 80%; margin-bottom: 20px;" />
+                    </div>
+                    <div>
+                        <div class="container text-center">
+                            <h3 data-aos="zoom-in" data-aos-duration="1000"
+                                style="color: var(--primary-color); margin-bottom: 15px;">أهدافنا</h3>
+                            <ul style="list-style-type: none; padding: 0; color: var(--dark-text); font-weight: 500;">
+                                <li data-aos="zoom-in" data-aos-duration="1000" style="margin-bottom: 10px;"><i
+                                        class="fas fa-check-circle"
+                                        style="color: var(--accent-color); margin-left: 8px;"></i>كفالة تحيي الأمل.</li>
+                                <li data-aos="zoom-in" data-aos-duration="1000" style="margin-bottom: 10px;"><i
+                                        class="fas fa-check-circle"
+                                        style="color: var(--accent-color); margin-left: 8px;"></i>سهولة الوصول، عمق
+                                    الأثر.</li>
+                                <li data-aos="zoom-in" data-aos-duration="1000" style="margin-bottom: 10px;"><i
+                                        class="fas fa-check-circle"
+                                        style="color: var(--accent-color); margin-left: 8px;"></i>عطاء يصنع مجتمعا أرقى.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div>
+                        <div class="masseg m1 mt-4 d-flex align-items-center" data-aos="fade-up"
+                            data-aos-duration="1000"
+                            style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            <img src="{% static 'img/الرسالة.svg' %}" class="icon ms-3" alt="رسالتنا"
+                                style="width: 50px;" />
+                            <div>
+                                <h4 style="color: var(--primary-color); margin-bottom: 5px;">رسالتنا</h4>
+                                <p style="margin: 0; color: var(--light-text);">لضمان حياة كريمة ومستقبل مشرق.</p>
+                            </div>
+                        </div>
+                        <div class="masseg mt-4 d-flex align-items-center" data-aos="fade-up" data-aos-duration="1000"
+                            style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            <img src="{% static 'img/الرؤؤية.svg' %}" class="icon ms-3" alt="رؤيتنا"
+                                style="width: 50px;" />
+                            <div>
+                                <h4 style="color: var(--primary-color); margin-bottom: 5px;">رؤيتنا</h4>
+                                <p style="margin: 0; color: var(--light-text);">لضمان حياة كريمة ومستقبل مشرق.</p>
+                            </div>
+                        </div>
+                        <div class="masseg m1 mt-4 d-flex align-items-center" data-aos="fade-up"
+                            data-aos-duration="1000"
+                            style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            <img src="{% static 'img/قيمنا.svg' %}" class="icon ms-3" alt="قيمنا"
+                                style="width: 50px;" />
+                            <div>
+                                <h4 style="color: var(--primary-color); margin-bottom: 5px;">قيمنا</h4>
+                                <p style="margin: 0; color: var(--light-text);">لضمان حياة كريمة ومستقبل مشرق.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="services-section" id="services">
+        <div class="container">
+            <div class="text-center">
+                <h3 class="title-sec" data-aos="zoom-in" data-aos-duration="1000">خدماتنا</h3>
+            </div>
+            <div class="row mt-5">
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card text-center" data-aos="fade-up" data-aos-duration="1000">
+                        <img src="{% static 'img/pexels-shvetsa-4482900.jpg' %}" class="card-img-top"
+                            alt="كفالة ايتام" />
+                        <div class="card-body">
+                            <h3 class="card-title">كفالة أيتام</h3>
+                            <p class="card-text">توفير الدعم المادي والمعنوي للأيتام لضمان حياة كريمة.</p>
+                            <button class="log"
+                                onclick="document.getElementById('myModalRegister').style.display='block'">ابدأ
+                                الكفالة</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card text-center" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100">
+                        <img src="{% static 'img/pexels-goumbik-590022.jpg' %}" class="card-img-top" alt="رعاية صحية" />
+                        <div class="card-body">
+                            <h3 class="card-title">رعاية صحية</h3>
+                            <p class="card-text">تقديم الرعاية الطبية للأيتام لضمان صحتهم وسلامتهم.</p>
+                            <button class="log"
+                                onclick="document.getElementById('myModalRegister').style.display='block'">ابدأ
+                                الكفالة</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card text-center" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                        <img src="{% static 'img/pexels-hotaru-1104007.jpg' %}" class="card-img-top" alt="تعليم" />
+                        <div class="card-body">
+                            <h3 class="card-title">تعليم</h3>
+                            <p class="card-text">دعم تعليم الأيتام لتمكينهم من بناء مستقبل مشرق.</p>
+                            <button class="log"
+                                onclick="document.getElementById('myModalRegister').style.display='block'">ابدأ
+                                الكفالة</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card text-center" data-aos="fade-up" data-aos-duration="1000">
+                        <img src="{% static 'img/pexels-anastasia-shuraeva-8465501.jpg' %}" class="card-img-top"
+                            alt="كفالة تعليمية" />
+                        <div class="card-body">
+                            <h3 class="card-title">كفالة تعليمية</h3>
+                            <p class="card-text">توفير الموارد التعليمية للأيتام لضمان استمرارية تعليمهم.</p>
+                            <button class="log"
+                                onclick="document.getElementById('myModalRegister').style.display='block'">ابدأ
+                                الكفالة</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card text-center" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100">
+                        <img src="{% static 'img/pexels-artempodrez-8087935.jpg' %}" class="card-img-top"
+                            alt="دعم نفسي" />
+                        <div class="card-body">
+                            <h3 class="card-title">دعم نفسي</h3>
+                            <p class="card-text">تقديم الدعم النفسي والاجتماعي للأيتام بشكل مستمر.</p>
+                            <button class="log"
+                                onclick="document.getElementById('myModalRegister').style.display='block'">ابدأ
+                                الكفالة</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card text-center" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                        <img src="{% static 'img/pexels-anastasia-shuraeva-8465501.jpg' %}" class="card-img-top"
+                            alt="أنشطة ترفيهية" />
+                        <div class="card-body">
+                            <h3 class="card-title">أنشطة ترفيهية</h3>
+                            <p class="card-text">تنظيم أنشطة ترفيهية لتعزيز السعادة لدى الأيتام.</p>
+                            <button class="log"
+                                onclick="document.getElementById('myModalRegister').style.display='block'">ابدأ
+                                الكفالة</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact-section" id="contact" style="background: var(--bg-color);">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div class="text-center" data-aos="zoom-in" data-aos-duration="1000">
+                        <img src="{% static 'img/herosec.svg' %}" alt="" class="img-fluid" style="max-width: 80%;" />
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <div class="text-center">
+                        <h3 class="title-contact" data-aos="zoom-in" data-aos-duration="1000"
+                            style="color: var(--primary-color); font-weight: 800; font-size: 2.2rem; margin-bottom: 15px;">
+                            هل لديك أي استفسار؟</h3>
+                        <p class="content-contact" data-aos="zoom-in" data-aos-duration="1000"
+                            style="color: var(--light-text); font-size: 1.1rem; margin-bottom: 25px;">لا تتردد في
+                            التواصل معنا، فريقنا مستعد دائماً للرد على أسئلتك.</p>
+                        <a href="mailto:saifzy2017@gmail.com" style="text-decoration: none;">
+                            <button class="contact-btn">تواصل معنا الآن</button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer-details">
+        <div class="container text-center">
+            <p>جميع الحقوق محفوظة لدى منصة كفالة © 2025</p>
+        </div>
+    </footer>
+
+    <div id="myModalRegister" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="closee"
+                onclick="document.getElementById('myModalRegister').style.display='none'">&times;</span>
+            <h2 class="title-modal text-center">إنشاء حساب جديد</h2>
+            <div class="text-center mb-4">
+                <img src="{% static 'img/loho.png' %}" alt="" width="90" height="90" />
+            </div>
+
+            <form method="POST" action="{% url 'register_view' %}" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                <select id="userType" name="user_type" onchange="toggleFields()">
+                    <option value="sponsor" selected>كفيل (متبرع)</option>
+                    <option value="supported">يتيم (مستفيد)</option>
+                </select>
+
+                <div id="sponsorFields">
+                    <input dir="ltr" class="user-inputs" type="text" name="sponsor_username"
+                        placeholder="اسم المستخدم (للدخول للنظام)" />
+                    <input dir="rtl" class="user-inputs" type="text" name="sponsor_name"
+                        placeholder="الاسم الكامل (أو اسم المؤسسة)" />
+                    <input dir="ltr" class="user-inputs" type="email" name="sponsor_email"
+                        placeholder="البريد الإلكتروني" />
+                    <input dir="ltr" class="user-inputs" type="password" name="sponsor_password"
+                        placeholder="كلمة المرور" />
+                </div>
+
+                <div id="supportedFields" class="fields" style="display: none;">
+                    <input dir="ltr" class="user-inputs" type="text" name="orphan_username"
+                        placeholder="اسم المستخدم (للدخول للنظام)" />
+                    <input dir="ltr" class="user-inputs" type="password" name="orphan_password"
+                        placeholder="كلمة المرور" />
+
+                    <hr style="margin: 15px 0; border-color: #eee;">
+
+                    <input dir="rtl" class="user-inputs" type="text" name="orphan_name"
+                        placeholder="الاسم الرباعي (الاسم القانوني)" />
+                    <input dir="rtl" class="user-inputs" type="number" name="orphan_age" placeholder="العمر" />
+
+                    <select name="orphan_gender" class="user-inputs" dir="rtl">
+                        <option value="" disabled selected>اختر الجنس...</option>
+                        <option value="Male">ذكر</option>
+                        <option value="Female">أنثى</option>
+                    </select>
+
+                    <input dir="rtl" class="user-inputs" type="text" name="orphan_area" placeholder="المنطقة السكنية" />
+                    <input dir="rtl" class="user-inputs" type="text" name="orphan_social"
+                        placeholder="الحالة الاجتماعية" />
+
+                    <select name="orphan_health" class="user-inputs" dir="rtl">
+                        <option value="" disabled selected>اختر الحالة الصحية...</option>
+                        <option value="ممتازة">ممتازة</option>
+                        <option value="جيدة">جيدة</option>
+                        <option value="مريض">مريض</option>
+                        <option value="ذوي احتياجات خاصة">ذوي احتياجات خاصة</option>
+                    </select>
+
+                    <div class="upload-container"
+                        style="background: #f8f9fa; border: 1px dashed #ccc; padding: 15px; border-radius: 8px; text-align: center; cursor: pointer; margin-top: 10px;">
+                        <label for="file-input-orphan" class="file-label"
+                            style="cursor: pointer; color: var(--primary-color); font-weight: 700;">
+                            <i class="fas fa-camera" style="margin-left: 5px;"></i> رفع صورة شخصية
+                        </label>
+                        <input type="file" id="file-input-orphan" name="orphan_photo" accept="image/*"
+                            style="display: none;" />
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn">إنشاء حساب</button>
+            </form>
+            <p class="link-sign" style="text-align: center; margin-top: 20px; font-size: 0.95rem;">
+                هل تمتلك حساب ؟
+                <span style="color: var(--accent-color); font-weight: 800; cursor: pointer;"
+                    onclick="document.getElementById('myModalRegister').style.display='none'; document.getElementById('myModal').style.display='block';">
+                    تسجيل دخول
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <div id="myModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('myModal').style.display='none'">&times;</span>
+            <h2 class="title-modal text-center">تسجيل الدخول</h2>
+            <div class="text-center mb-4">
+                <img src="{% static 'img/loho.png' %}" alt="" width="90" height="90" />
+            </div>
+
+            <form method="POST" action="{% url 'login_view' %}" novalidate>
+                {% csrf_token %}
+                <input dir="ltr" class="user-inputs" type="text" name="username" placeholder="اسم المستخدم" />
+                <input dir="ltr" class="user-inputs" type="password" name="password" placeholder="كلمة المرور" />
+
+                <div class="divFor" style="text-align: right; margin-bottom: 15px;">
+                    <a class="forgotpass" href="#"
+                        style="color: var(--light-text); font-size: 0.9rem; text-decoration: none;">هل نسيت كلمة المرور
+                        ؟</a>
+                </div>
+
+                <button type="submit" class="login-btn">تسجيل الدخول</button>
+            </form>
+
+            <p class="link-sign" style="text-align: center; margin-top: 20px; font-size: 0.95rem;">
+                لا تمتلك حساباً ؟
+                <span style="color: var(--accent-color); font-weight: 800; cursor: pointer;"
+                    onclick="document.getElementById('myModal').style.display='none'; document.getElementById('myModalRegister').style.display='block';">
+                    إنشاء حساب
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <script src="{% static 'js/bootstrap.bundle.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/modals.js' %}"></script>
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script>
+        AOS.init();
+
+        // Dropdown toggle logic
+        function toggleFields() {
+            var userType = document.getElementById("userType").value;
+            if (userType === "sponsor") {
+                document.getElementById("sponsorFields").style.display = "block";
+                document.getElementById("supportedFields").style.display = "none";
+            } else {
+                document.getElementById("sponsorFields").style.display = "none";
+                document.getElementById("supportedFields").style.display = "block";
+            }
+        }
+        document.getElementById("userType").addEventListener("change", toggleFields);
+    </script>
+</body>
+
+</html>

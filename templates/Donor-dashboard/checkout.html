@@ -1,0 +1,93 @@
+{% extends 'Donor-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}إتمام الدفع | كفالة{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="checkout-container"
+        style="max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden;">
+
+        <div style="background-color: #2a756b; color: white; padding: 25px; text-align: center;">
+            <h2 style="margin: 0; font-weight: bold;">إتمام عملية الدفع</h2>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">كفالة اليتيم: {{ payment.sponsorship.orphan.name }}</p>
+        </div>
+
+        <form method="POST" action="{% url 'pay_checkout' payment.id %}" enctype="multipart/form-data"
+            style="padding: 30px;">
+            {% csrf_token %}
+
+            <div style="text-align: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px dashed #eee;">
+                <p style="color: #777; font-size: 0.9rem; margin-bottom: 5px;">المبلغ المستحق</p>
+                <h1 style="color: #2a756b; margin: 0; font-size: 2.5rem; font-weight: bold;">${{ payment.amount }}</h1>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; color: #333; display: block; margin-bottom: 8px;">اختر وسيلة
+                    الدفع:</label>
+                <select name="payment_method" id="paymentMethod" onchange="togglePaymentFields()"
+                    style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;"
+                    required>
+                    <option value="" disabled selected>-- اختر الوسيلة --</option>
+                    <option value="Bank">حوالة بنكية (Bank of Palestine)</option>
+                    <option value="PalPay">محفظة PalPay</option>
+                    <option value="Cash">دفع نقدي (في مقر الجمعية)</option>
+                    <option value="Credit Card">بطاقة ائتمانية (دفع إلكتروني آمن)</option>
+                </select>
+            </div>
+
+            <div id="instructionsBox"
+                style="display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; border-right: 4px solid #006dff; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.6; color: #555;">
+            </div>
+
+            <div id="receiptSection" style="display: none; margin-bottom: 25px;">
+                <label style="font-weight: bold; color: #333; display: block; margin-bottom: 8px;">إرفاق صورة الإيصال
+                    (إلزامي):</label>
+                <input type="file" name="receipt_image" id="receiptImage" accept="image/*"
+                    style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; background: #fff;">
+
+                <label style="font-weight: bold; color: #333; display: block; margin-top: 15px; margin-bottom: 8px;">رقم
+                    الحوالة / المرجع (اختياري):</label>
+                <input type="text" name="transaction_reference" placeholder="أدخل رقم الحوالة إن وجد"
+                    style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px;">
+            </div>
+
+            <button type="submit" id="submitBtn"
+                style="width: 100%; background: #2a756b; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.3s; display: none;">
+                تأكيد وإرسال الدفعة
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function togglePaymentFields() {
+        const method = document.getElementById('paymentMethod').value;
+        const receiptSection = document.getElementById('receiptSection');
+        const instructionsBox = document.getElementById('instructionsBox');
+        const submitBtn = document.getElementById('submitBtn');
+        const receiptInput = document.getElementById('receiptImage');
+
+        instructionsBox.style.display = 'block';
+        submitBtn.style.display = 'block';
+
+        if (method === 'Bank') {
+            instructionsBox.innerHTML = "<strong>تعليمات التحويل البنكي:</strong><br>الرجاء تحويل المبلغ إلى حسابنا في بنك فلسطين (رقم الحساب: 123456789). بعد التحويل، قم برفع صورة الإشعار هنا.";
+            receiptSection.style.display = 'block';
+            receiptInput.required = true;
+        } else if (method === 'PalPay') {
+            instructionsBox.innerHTML = "<strong>تعليمات PalPay:</strong><br>الرجاء تحويل المبلغ إلى رقم المحفظة (0590000000). بعد التحويل، قم برفع صورة الشاشة للعملية هنا.";
+            receiptSection.style.display = 'block';
+            receiptInput.required = true;
+        } else if (method === 'Cash') {
+            instructionsBox.innerHTML = "<strong>تعليمات الدفع النقدي:</strong><br>سيقوم النظام بإنشاء رمز مرجعي لك. يرجى زيارة مقر الجمعية خلال 48 ساعة وتسليم المبلغ نقداً باستخدام الرمز.";
+            receiptSection.style.display = 'none';
+            receiptInput.required = false;
+        } else if (method === 'Credit Card') {
+            instructionsBox.innerHTML = "<strong>الدفع الإلكتروني:</strong><br>سيتم توجيهك إلى صفحة دفع آمنة (Stripe) لإدخال بيانات بطاقتك الائتمانية.";
+            receiptSection.style.display = 'none';
+            receiptInput.required = false;
+        }
+    }
+</script>
+{% endblock %}

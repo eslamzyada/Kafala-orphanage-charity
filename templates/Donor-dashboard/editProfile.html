@@ -1,0 +1,88 @@
+{% extends 'Donor-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}تعديل الحساب | كفالة{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="edit-profile-container"
+        style="max-width: 650px; margin: 40px auto; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden;">
+
+        <div style="background-color: #2a756b; color: white; padding: 25px; text-align: center;">
+            <h2 style="margin: 0; font-weight: bold;">تعديل الحساب الشخصي</h2>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">تحديث بيانات التواصل والصورة الشخصية</p>
+        </div>
+
+        <form method="POST" action="{% url 'donor_edit_profile' %}" enctype="multipart/form-data"
+            style="padding: 30px;">
+            {% csrf_token %}
+
+            <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 250px;">
+                    <label for="name" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">الاسم
+                        الكامل</label>
+                    <input type="text" id="name" name="name" value="{{ donor.name|default:'' }}"
+                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"
+                        required>
+                </div>
+
+                <div class="form-group" style="flex: 1; min-width: 250px;">
+                    <label for="email"
+                        style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">البريد
+                        الإلكتروني</label>
+                    <input type="email" id="email" name="email" value="{{ user.email|default:'' }}"
+                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"
+                        required>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="phone" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">رقم
+                    الهاتف</label>
+                <input type="tel" id="phone" name="phone" value="{{ donor.phone|default:'' }}"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;"
+                    dir="ltr">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="company" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">الشركة
+                    / المؤسسة (اختياري)</label>
+                <input type="text" id="company" name="company" value="{{ donor.company|default:'' }}"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 25px;">
+                <label for="address" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">العنوان
+                    (اختياري)</label>
+                <textarea id="address" name="address"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; min-height: 100px; resize: vertical;">{{ donor.address|default:'' }}</textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 30px;">
+                <label for="profile_image"
+                    style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">الصورة الشخصية</label>
+                <div
+                    style="display: flex; align-items: center; gap: 15px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px dashed #ccc;">
+                    {% if donor.image %}
+                    <img src="{{ donor.image.url }}" alt="Profile"
+                        style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #2a756b;">
+                    {% else %}
+                    <img src="{% static 'img/Circle.png' %}" alt="Profile"
+                        style="width: 60px; height: 60px; border-radius: 50%;">
+                    {% endif %}
+                    <input type="file" id="profile_image" name="profile_image" accept="image/*"
+                        style="width: 100%; padding: 5px;">
+                </div>
+            </div>
+
+            <div class="form-actions" style="display: flex; gap: 15px;">
+                <button type="submit"
+                    style="flex: 2; padding: 15px; background-color: #2a756b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1rem; transition: 0.2s;">حفظ
+                    التعديلات</button>
+                <a href="{% url 'sponsor_dashboard' %}"
+                    style="flex: 1; padding: 15px; background-color: #f8f9fa; color: #333; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-decoration: none; text-align: center; font-weight: bold; font-size: 1.1rem; transition: 0.2s;">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends 'Orphan-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}بيانات اليتيم{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="title-content mb-4">
+        <h3 class="document-title"
+            style="color: #333; font-weight: bold; border-bottom: 2px solid #006dff; display: inline-block; padding-bottom: 5px;">
+            البيانات الشخصية والتفاصيل
+        </h3>
+    </div>
+
+    <div class="row mt-4" style="display: flex; flex-wrap: wrap; gap: 20px;">
+
+        <div class="profile-card text-center"
+            style="flex: 1; min-width: 250px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+
+            {% if orphan.image %}
+            <img src="{{ orphan.image.url }}" alt="صورة {{ orphan.name }}"
+                style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #f0f7ff; margin-bottom: 15px;">
+            {% else %}
+            <img src="{% static 'img/Screenshot 2025-05-17 082043.png' %}" alt="صورة افتراضية"
+                style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #f0f7ff; margin-bottom: 15px;">
+            {% endif %}
+
+            <h4 style="color: #333; font-weight: bold;">{{ orphan.name }}</h4>
+
+            <p style="color: gray; margin-bottom: 15px;">
+                {% if orphan.social_status %}
+                {{ orphan.social_status }}
+                {% else %}
+                يتيم
+                {% endif %}
+            </p>
+
+            <span
+                style="background-color: {% if orphan.sponsorship_status == 'Sponsored' %}#68af73{% else %}#ffb822{% endif %}; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; font-weight: bold;">
+                {% if orphan.sponsorship_status == 'Sponsored' %}
+                <i class="fas fa-check-circle"></i> مكفول
+                {% else %}
+                <i class="fas fa-clock"></i> متاح للكفالة
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="data-card"
+            style="flex: 2; min-width: 300px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+            <h5 style="color: #006dff; margin-bottom: 25px; font-weight: bold;">
+                <i class="fas fa-info-circle"></i> المعلومات الأساسية
+            </h5>
+
+            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 40%; color: #777; font-weight: bold;">الاسم الرباعي:</div>
+                <div style="width: 60%; color: #333;">{{ orphan.name }}</div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 40%; color: #777; font-weight: bold;">العمر:</div>
+                <div style="width: 60%; color: #333;">
+                    {% if orphan.age %}
+                    {{ orphan.age }} سنة
+                    {% else %}
+                    غير متوفر
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 40%; color: #777; font-weight: bold;">الجنس:</div>
+                <div style="width: 60%; color: #333;">
+                    {% if orphan.gender == 'Male' %}
+                    ذكر
+                    {% elif orphan.gender == 'Female' %}
+                    أنثى
+                    {% else %}
+                    غير متوفر
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 40%; color: #777; font-weight: bold;">المنطقة السكنية:</div>
+                <div style="width: 60%; color: #333;">
+                    {% if orphan.area %}
+                    {{ orphan.area }}
+                    {% else %}
+                    غير متوفر
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 40%; color: #777; font-weight: bold;">تفاصيل الحالة الصحية:</div>
+                <div style="width: 60%; color: #333; line-height: 1.6;">
+                    {% if orphan.health_details %}
+                    {{ orphan.health_details }}
+                    {% else %}
+                    لا توجد تفاصيل إضافية مسجلة.
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 40%; color: #777; font-weight: bold;">اسم ولي الأمر / الوصي:</div>
+                <div style="width: 60%; color: #333;">
+                    {% if orphan.guardian_name %}
+                    {{ orphan.guardian_name }}
+                    {% else %}
+                    غير متوفر
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 40%; color: #777; font-weight: bold;">رقم التواصل:</div>
+                <div style="width: 60%; color: #333;" dir="ltr">
+                    {% if orphan.phone %}
+                    {{ orphan.phone }}
+                    {% else %}
+                    غير متوفر
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; margin-top: 25px; justify-content: flex-end;">
+                <a href="{% url 'orphan_edit_profile' %}"
+                    style="background-color: #006dff; color: white; padding: 10px 25px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.3s;">
+                    <i class="fas fa-edit"></i> تحديث البيانات
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}<option value="Male" {% if orphan.gender=='Male' %} selected {% endif %}>ذكر</option>
+<option value="Female" {% if orphan.gender=='Female' %} selected {% endif %}>أنثى</option>

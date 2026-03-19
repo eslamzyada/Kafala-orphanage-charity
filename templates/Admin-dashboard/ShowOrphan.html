@@ -1,0 +1,181 @@
+{% extends 'Admin-dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="title-content">
+    <div class="btn-orphan">
+        <p class="head-guarantee">تفاصيل اليتيم</p>
+    </div>
+
+    <div class="btn-orphan">
+        <a id="editBtn" class="btn-edit-orphan"> تعديل البيانات</a>
+        <a href="#" class="btn-add-orphan btn-download" id="uploadDocumentBtn" onclick="document.getElementById('myModal').style.display='block'"> رفع الوثيقة</a>
+        
+        <div id="myModal" class="modal">
+            <div class="popup-content">
+                <span class="close" onclick="document.getElementById('myModal').style.display='none'">&times;</span>
+                <p class="title-pop"> إضافة وثيقة جديدة</p>
+                <hr>
+                <form method="POST" enctype="multipart/form-data" action="{% url 'admin_orphan_details' orphan.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="upload_document" value="true">
+                    
+                    <div class="form-group">
+                        <input type="text" name="document_title" placeholder=" أسم الوثيقة " required>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" name="document_desc" placeholder=" وصف الوثيقة (اختياري)">
+                    </div>
+
+                    <div class="document-number">
+                        <label class="custom-file-upload">
+                            <input type="file" name="document_file" class="file-input" required>
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>رفع الوثيقة</span>
+                        </label>
+                    </div>
+                    <div class="stutes">
+                        <button type="submit" class="save-btn">رفع الوثيقة</button>
+                        <button type="button" class="cancle-btn" onclick="document.getElementById('myModal').style.display='none'">إالغاء</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <form method="POST" action="{% url 'delete_orphan' orphan.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-delete-orphan" style="border:none; cursor:pointer;" onclick="return confirm('هل أنت متأكد من حذف هذا اليتيم؟')">حذف اليتيم</button>
+        </form>
+    </div>
+    
+    <div id="editPopup" class="popup">
+        <div class="popup-content">
+            <span class="close-btn" onclick="document.getElementById('editPopup').style.display='none'">&times;</span>
+            <p> تعديل بيانات اليتيم : <span>{{ orphan.name }}</span></p>
+
+            <form method="POST" action="{% url 'admin_orphan_details' orphan.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="edit_orphan" value="true">
+                
+                <div class="form-group">
+                    <input type="text" name="name" value="{{ orphan.name }}" placeholder="الأسم الكامل" required>
+                </div>
+
+                <div class="form-group">
+                    <input type="number" name="age" value="{{ orphan.age }}" placeholder="العمر" required>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" name="area" value="{{ orphan.area }}" placeholder="المنطقة / المدينة" required>
+                </div>
+
+                <div class="form-group">
+                    <select name="social_status" required>
+                        <option value="يتيم الأب" {% if orphan.social_status == 'يتيم الأب' %}selected{% endif %}>يتيم الأب </option>
+                        <option value="يتيم لأبوين" {% if orphan.social_status == 'يتيم لأبوين' %}selected{% endif %}>يتيم لأبوين</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <select name="health_status" required>
+                        <option value="سليم" {% if orphan.health_status == 'سليم' %}selected{% endif %}>سليم</option>
+                        <option value="غير سليم" {% if orphan.health_status == 'غير سليم' %}selected{% endif %}>غير سليم</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="save-btn">حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="orphan-info">
+        <div class="orphan-details">
+            <div>
+                {% if orphan.image %}
+                    <img src="{{ orphan.image.url }}" alt="Orphan Image" width="110px" height="110px" style="border-radius: 50%;">
+                {% else %}
+                    <img src="{% static 'img/Circle.png' %}" alt="Placeholder Image" width="110px" height="110px">
+                {% endif %}
+            </div>
+            <div class="orphan-name">
+                <h4>{{ orphan.name }}</h4>
+                <h5>#{{ orphan.id }} </h5>
+                <h5>{{ orphan.age }} سنة</h5>
+            </div>
+        </div>
+    </div>
+    <h3 class="section-title">البيانات الأساسية</h3>
+    <div class="container" style="max-width: 80%; margin-right: 20px;">
+        <!-- سيظهر Scroll فقط عند تصغير الشاشة أقل من 992px (حجم lg) -->
+        <div class="table-responsive-lg">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>تاريخ الإضافة</th>
+                        <th>الجنس</th>
+                        <th>المنطقة</th>
+                        <th>الحالة الإجتماعية</th>
+                        <th>الحالة الصحية</th>
+                        <th>حالة الكفالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ orphan.created_at|date:"d/m/Y" }}</td>
+                        <td>{{ orphan.get_gender_display|default:orphan.gender }}</td>
+                        <td>{{ orphan.area }}</td>
+                        <td>{{ orphan.social_status }}</td>
+                        <td>{{ orphan.health_status }}</td>
+                        <td class="{% if orphan.sponsorship_status == 'Sponsored' %}status-active{% else %}status-inactive{% endif %}">
+                            {{ orphan.sponsorship_status }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <h3 class="section-title">الوثائق والمستندات</h3>
+
+    <table class="table table-hover text-wrap table-lg responsive-table" style="max-width: 80%;">
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>تاريخ الرفع</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for document in documents %}
+            <tr>
+                <td>{{ document.title }}</td>
+                <td>{{ document.uploaded_at|date:"d/m/Y" }}</td>
+                <td class="document-actions">
+                    <a href="{{ document.file.url }}" target="_blank" class="btn-view" style="text-decoration:none;">
+                        <i class="fas fa-eye"></i> عرض
+                    </a>
+                    <a href="{{ document.file.url }}" download class="btn-downloadd" style="text-decoration:none;">
+                        <i class="fas fa-download"></i> تحميل
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">لا توجد وثائق متاحة لهذا اليتيم</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('editBtn').onclick = function() {
+        document.getElementById('editPopup').style.display = 'block';
+    }
+</script>
+{% endblock %}

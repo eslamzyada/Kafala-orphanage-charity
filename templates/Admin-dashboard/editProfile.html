@@ -1,0 +1,48 @@
+{% extends 'Admin-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}تعديل الحساب | كفالة{% endblock %}
+
+{% block content %}
+<div class="main-edit">
+    <div class="inner-edit container">
+        <p class="edit-title">تعديل ملفي الشخصي</p>
+
+        <form method="POST" action="{% url 'edit_profile' %}">
+
+            {% csrf_token %}
+
+            <div class="image-upload">
+                <label for="file-input" class="upload-circle">
+                    <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="camera icon">
+                    <span>انقر لتغيير الصورة</span>
+                </label>
+                <input id="file-input" type="file" accept="image/*" hidden>
+            </div>
+
+            <div class="edit-inputs">
+                <div>
+                    <label for="firstName">الاسم الأول</label>
+                    <input type="text" id="firstName" name="firstName" value="{{ request.user.first_name }}"
+                        class="form-control" required>
+                </div>
+                <div>
+                    <label for="lastName">الاسم الأخير</label>
+                    <input type="text" id="lastName" name="lastName" value="{{ request.user.last_name }}"
+                        class="form-control" required>
+                </div>
+                <div>
+                    <label for="email">البريد الالكتروني</label>
+                    <input type="email" id="email" name="email" value="{{ request.user.email }}" class="form-control"
+                        required>
+                </div>
+
+                <button type="submit" class="form-control"
+                    style="background-color: #0b5c46; color: white; cursor: pointer; border: none; font-weight: bold;">
+                    حفظ التعديلات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

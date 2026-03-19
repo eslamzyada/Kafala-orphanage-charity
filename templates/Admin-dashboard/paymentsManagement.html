@@ -1,0 +1,167 @@
+{% extends 'Admin-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}إدارة المدفوعات | كفالة{% endblock %}
+
+{% block content %}
+<div class="main-content">
+
+    <p class="title-guarantee">إدارة المدفوعات</p>
+
+    <div class="search-eara">
+        <div type="submit">
+            <input type="text" id="searchInput" placeholder="ابحث باسم الكافل..." onkeyup="filterPayments()">
+        </div>
+
+        <select id="methodFilter" class="select-list-header" onchange="filterPayments()">
+            <option value="">وسيلة الدفع (الكل)</option>
+            <option value="bank">بنكي</option>
+            <option value="palpay">PalPay</option>
+            <option value="cash">كاش</option>
+            <option value="wallet">محفظة</option>
+        </select>
+
+        <select id="statusFilter" class="select-list-header" onchange="filterPayments()">
+            <option value="">حالة الدفع (الكل)</option>
+            <option value="Completed">مكتمل</option>
+            <option value="Pending">قيد الانتظار</option>
+            <option value="Failed">فشل / غير مستوفي</option>
+        </select>
+    </div>
+
+    <div class="card-body table-responsive" style="max-width: 90%; margin-right: 15px;">
+        <table class="table table-hover text-wrap table-lg" style="border-radius: 10px; overflow: hidden;">
+            <thead>
+                <tr>
+                    <th>رقم المعاملة</th>
+                    <th>أسم الكافل</th>
+                    <th>المبلغ</th>
+                    <th>تاريخ الدفع</th>
+                    <th>وسيلة الدفع</th>
+                    <th>حالة الدفع</th>
+                    <th colspan="2">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr class="pay-row">
+                    <td>{{ payment.id }}</td>
+                    <td class="pay-donor">{{ payment.sponsorship.donor.name }}</td>
+                    <td>${{ payment.amount }}</td>
+                    <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
+                    <td class="pay-method">{{ payment.payment_method }}</td>
+
+                    <td class="pay-status" data-status="{{ payment.status }}">
+                        <span
+                            style="font-weight: bold; color: {% if payment.status == 'Completed' %}#68AF73{% elif payment.status == 'Failed' %}red{% else %}#fbba04{% endif %};">
+                            {% if payment.status == 'Completed' %}
+                            مكتمل
+                            {% elif payment.status == 'Failed' %}
+                            فشل
+                            {% else %}
+                            قيد الانتظار
+                            {% endif %}
+                        </span>
+                    </td>
+
+                    <td class="stutes">
+                        <a href="javascript:void(0);" class="show-guarantee" style="text-decoration:none;"
+                            onclick="document.getElementById('payModal_{{ payment.id }}').style.display='block'">تفاصيل</a>
+
+                        {% if payment.status != 'Completed' %}
+                        <form method="POST" action="{% url 'send_payment_reminder' payment.id %}"
+                            style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="end-guarantee"
+                                style="border:none; cursor:pointer; background-color:#ff9800; color:white; padding: 4px 10px; border-radius:15px; font-size:14px;">إرسال
+                                إشعار</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #777; font-weight: bold;">
+                        لا توجد مدفوعات مسجلة في النظام حالياً.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% for payment in payments %}
+<div id="payModal_{{ payment.id }}" class="modalshow"
+    style="display: none; position: fixed; z-index: 999999; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(0,0,0,0.6); overflow-y: auto;">
+    <div
+        style="background-color: white; width: 90%; max-width: 500px; margin: 10vh auto; border-radius: 12px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.4); position: relative; direction: rtl; text-align: right; overflow: hidden;">
+
+        <div
+            style="background-color: #2a756b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; font-weight: bold; font-size: 1.2rem;">تفاصيل المعاملة #{{ payment.id }}</h4>
+            <span onclick="document.getElementById('payModal_{{ payment.id }}').style.display='none'"
+                style="cursor: pointer; font-size: 28px; line-height: 1;">&times;</span>
+        </div>
+
+        <div style="padding: 25px; color: #333; line-height: 1.8;">
+            <p><strong>اسم الكافل:</strong> {{ payment.sponsorship.donor.name }}</p>
+            <p><strong>اسم اليتيم:</strong> {{ payment.sponsorship.orphan.name }}</p>
+            <p><strong>المبلغ:</strong> ${{ payment.amount }}</p>
+            <p><strong>وسيلة الدفع:</strong> {{ payment.payment_method }}</p>
+            <p><strong>تاريخ المعاملة:</strong> {{ payment.payment_date|date:"Y-m-d" }}</p>
+            <p><strong>حالة المعاملة:</strong>
+                <span
+                    style="font-weight: bold; color: {% if payment.status == 'Completed' %}#68AF73{% elif payment.status == 'Failed' %}red{% else %}#fbba04{% endif %};">
+                    {% if payment.status == 'Completed' %}مكتمل{% elif payment.status == 'Failed' %}فشل{% else %}قيد
+                    الانتظار{% endif %}
+                </span>
+            </p>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block extra_scripts %}
+<script>
+    function normalizeArabic(text) {
+        if (!text) return "";
+        return text.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase().trim();
+    }
+
+    function filterPayments() {
+        let searchValue = normalizeArabic(document.getElementById("searchInput").value);
+        let methodValue = document.getElementById("methodFilter").value;
+        let statusValue = document.getElementById("statusFilter").value;
+
+        let rows = document.querySelectorAll(".pay-row");
+
+        rows.forEach(row => {
+            let donorName = normalizeArabic(row.querySelector(".pay-donor").innerText);
+            let payMethod = row.querySelector(".pay-method").innerText.toLowerCase();
+            let payStatus = row.querySelector(".pay-status").getAttribute("data-status");
+
+            // 1. Search Check (by Donor Name)
+            let matchesSearch = donorName.includes(searchValue);
+
+            // 2. Bilingual Method Check
+            let matchesMethod = true;
+            if (methodValue === 'bank') matchesMethod = payMethod.includes('bank') || payMethod.includes('بنك');
+            else if (methodValue === 'palpay') matchesMethod = payMethod.includes('palpay') || payMethod.includes('بال');
+            else if (methodValue === 'cash') matchesMethod = payMethod.includes('cash') || payMethod.includes('كاش');
+            else if (methodValue === 'wallet') matchesMethod = payMethod.includes('wallet') || payMethod.includes('محفظ');
+
+            // 3. Strict Status Check using hidden data-attribute
+            let matchesStatus = (statusValue === "") || (payStatus === statusValue);
+
+            // Apply filter
+            if (matchesSearch && matchesMethod && matchesStatus) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}

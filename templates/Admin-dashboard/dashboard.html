@@ -1,0 +1,141 @@
+{% extends 'Admin-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}لوحة تحكم المدير | كفالة{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="header">
+        <div class="welcome-message">مرحباً بك مجدداً: <span>{{ user.first_name|default:'إسلام زياده' }}</span> <br>
+            <p class="text-message">جميع البيانات المختلفة بمطلق مناقصة الإحصائيات أو إدارة صندوق المنصة من القوائم
+                الخاصة</p>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-title">الأيتام المسجلين</div>
+            <div class="stat-number"><img class="card-icon" src="{% static 'img/users-three-Filled.png' %}" alt=""><span
+                    class="counter" data-target="{{ total_orphans }}">{{ total_orphans }}</span> +</div>
+            <div class="stat-description">أكثر من {{ available_orphans }} متاحين للكفالة</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">الكافلين</div>
+            <div class="stat-number"> <img class="card-icon" src="{% static 'img/user-Filled.png' %}" alt=""><span
+                    class="counter" data-target="{{ total_donors }}">{{ total_donors }}</span> +</div>
+            <div class="stat-description">أكثر من {{ total_donors }} كافل و كافلة من أهل الخير</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">الأيتام المكفولين</div>
+            <div class="stat-number"> <img class="card-icon" src="{% static 'img/users-three-Filled.png' %}"
+                    alt=""><span class="counter" data-target="{{ sponsored_orphans }}">{{ sponsored_orphans }}</span> +
+            </div>
+            <div class="stat-description">أكثر من {{ sponsored_orphans }} يتيما تمت كفالتهم</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">الأيتام المتاحين للكفالة</div>
+            <div class="stat-number"><img class="card-icon" src="{% static 'img/users-three-Filled.png' %}" alt=""><span
+                    class="counter" data-target="{{ available_orphans }}">{{ available_orphans }}</span> +</div>
+            <div class="stat-description">يوجد حاليا أكثر من {{ available_orphans }} يتيما متاحون للكفالة</div>
+        </div>
+    </div>
+
+    <div class="stats-container2" style="display: flex; gap: 20px; margin-top: 30px;">
+        <div class="chrt1" style="position: relative; height: 300px; width: 100%;">
+            <canvas id="chart1"></canvas>
+        </div>
+        <div class="chrt2" style="position: relative; height: 300px; width: 100%;">
+            <canvas id="chart2"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const totalOrphans = parseInt('{{ total_orphans|default:0 }}');
+    const totalDonors = parseInt('{{ total_donors|default:0 }}');
+    const sponsoredOrphans = parseInt('{{ sponsored_orphans|default:0 }}');
+    const availableOrphans = parseInt('{{ available_orphans|default:0 }}');
+    const monthlyData = JSON.parse('{{ monthly_counts|safe }}');
+
+    // Shared styling options for beautiful Arabic fonts
+    const chartFont = { family: 'Tajawal, Cairo, sans-serif', size: 14 };
+
+    // --- CHART 1: THE BAR CHART ---
+    const ctx1 = document.getElementById('chart1').getContext('2d');
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: ['الأيتام', 'الكافلين', 'مكفولين', 'متاحين'],
+            datasets: [{
+                label: 'الإحصائيات',
+                data: [totalOrphans, totalDonors, sponsoredOrphans, availableOrphans],
+                backgroundColor: ['#2a756b', '#869894', '#869894', '#2a756b'],
+                borderRadius: 4,
+                maxBarThickness: 50 // Prevents the bars from becoming massively wide
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, // The magic rule to stop the squishing!
+            plugins: {
+                legend: { labels: { font: chartFont } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1, // Forces the axis to only use whole numbers (1, 2, 3...)
+                        font: chartFont
+                    }
+                },
+                x: { ticks: { font: chartFont } }
+            }
+        }
+    });
+
+    // --- CHART 2: THE LINE CHART ---
+    const ctx2 = document.getElementById('chart2').getContext('2d');
+    new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
+            datasets: [{
+                label: 'عدد الأيتام المكفولين',
+                data: monthlyData,
+                borderColor: '#2a756b',
+                backgroundColor: 'rgba(42, 117, 107, 0.1)',
+                borderWidth: 2,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#2a756b',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, // The magic rule to stop the squishing!
+            plugins: {
+                legend: { labels: { font: chartFont } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1, // Forces the axis to only use whole numbers
+                        font: chartFont
+                    }
+                },
+                x: { ticks: { font: chartFont } }
+            }
+        }
+    });
+</script>
+{% endblock %}

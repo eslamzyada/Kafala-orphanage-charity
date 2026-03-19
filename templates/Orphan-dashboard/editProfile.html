@@ -1,0 +1,108 @@
+{% extends 'Orphan-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}تعديل الحساب{% endblock %}
+
+{% block content %}
+<div class="main-edit">
+    <div class="inner-edit container">
+        <p class="edit-title"> تعديل ملفي الشخصي</p>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="image-upload">
+                <label for="file-input" class="upload-circle" {% if orphan.image %}
+                    style="background-image: url('{{ orphan.image.url }}'); background-size: cover; background-position: center;"
+                    {% endif %}>
+                    {% if not orphan.image %}
+                    <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="camera icon">
+                    {% endif %}
+                    <span>انقر لتغيير الصورة</span>
+                </label>
+                <input id="file-input" name="profile_image" type="file" accept="image/*" hidden>
+            </div>
+
+            <div class="edit-inputs">
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label>الاسم الكامل (غير قابل للتعديل)</label>
+                        <input type="text" class="form-control" value="{{ orphan.name }}" disabled>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>العمر</label>
+                        <input type="number" name="age" class="form-control"
+                            value="{% if orphan.age %}{{ orphan.age }}{% endif %}" min="0" max="18">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label>الجنس</label>
+                        <select name="gender" class="form-control">
+                            <option value="Male" {% if is_male %} selected {% endif %}>ذكر</option>
+                            <option value="Female" {% if is_female %} selected {% endif %}>أنثى</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>الحالة الصحية العامة</label>
+                        <select name="health_status" class="form-control">
+                            <option value="ممتازة" {% if health_excellent %} selected {% endif %}>ممتازة</option>
+                            <option value="جيدة" {% if health_good %} selected {% endif %}>جيدة</option>
+                            <option value="مريض" {% if health_sick %} selected {% endif %}>مريض</option>
+                            <option value="ذوي احتياجات خاصة" {% if health_special %} selected {% endif %}>ذوي احتياجات
+                                خاصة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label>المنطقة السكنية</label>
+                        <input type="text" name="area" class="form-control"
+                            value="{% if orphan.area %}{{ orphan.area }}{% endif %}">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>الحالة الاجتماعية</label>
+                        <input type="text" name="social_status" class="form-control"
+                            value="{% if orphan.social_status %}{{ orphan.social_status }}{% endif %}">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label>تفاصيل الحالة الصحية (إن وجدت)</label>
+                    <textarea name="health_details" class="form-control" rows="2"
+                        placeholder="اكتب تفاصيل الحالة الصحية هنا...">{% if orphan.health_details %}{{ orphan.health_details }}{% endif %}</textarea>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label>اسم ولي الأمر / الوصي</label>
+                        <input type="text" name="guardian_name" class="form-control"
+                            value="{% if orphan.guardian_name %}{{ orphan.guardian_name }}{% endif %}">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>رقم التواصل</label>
+                        <input type="tel" name="phone" class="form-control"
+                            value="{% if orphan.phone %}{{ orphan.phone }}{% endif %}" dir="ltr">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                    <div style="flex: 1;">
+                        <label>البريد الالكتروني للحساب</label>
+                        <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>بريد التواصل إن وجد</label>
+                        <input type="email" name="contact_email" class="form-control"
+                            value="{% if orphan.contact_email %}{{ orphan.contact_email }}{% endif %}">
+                    </div>
+                </div>
+
+                <button type="submit" class="form-control btn btn-primary" style="font-weight: bold;">حفظ
+                    التعديلات</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

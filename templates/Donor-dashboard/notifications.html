@@ -1,0 +1,132 @@
+{% extends 'Donor-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}الإشعارات | كفالة{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="notifications-container"
+        style="max-width: 800px; margin: 30px auto; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); overflow: hidden;">
+
+        <div
+            style="background-color: #f8f9fa; padding: 20px 25px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; color: #2a756b; font-weight: bold; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-bell"></i> سجل الإشعارات
+            </h2>
+
+            {% if unread_count > 0 %}
+            <button onclick="markAllAsRead()" id="markAllBtn"
+                style="background: none; border: 1px solid #006dff; color: #006dff; padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                <i class="fas fa-check-double"></i> تحديد الكل كمقروء
+            </button>
+            {% endif %}
+        </div>
+
+        <div style="padding: 10px 25px 25px 25px;">
+            {% if notifications %}
+            <div class="notifications-list">
+                {% for notif in notifications %}
+                <div id="notif-{{ notif.id }}" class="notification-item"
+                    style="padding: 20px; border-bottom: 1px solid #eee; border-radius: 8px; margin-top: 15px; background-color: {% if not notif.is_read %}#f0f7ff{% else %}#fff{% endif %}; border: 1px solid {% if not notif.is_read %}#cce5ff{% else %}#eee{% endif %}; transition: 0.3s; display: flex; gap: 15px; align-items: flex-start;">
+
+                    <div
+                        style="background: {% if not notif.is_read %}#006dff{% else %}#f1f1f1{% endif %}; color: {% if not notif.is_read %}white{% else %}#888{% endif %}; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.2rem;">
+                        {% if "دفع" in notif.title or "مالي" in notif.title %}
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        {% elif "يتيم" in notif.title or "كفالة" in notif.title %}
+                        <i class="fas fa-child"></i>
+                        {% else %}
+                        <i class="fas fa-info-circle"></i>
+                        {% endif %}
+                    </div>
+
+                    <div style="flex-grow: 1;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <h4
+                                style="margin: 0; font-size: 1.1rem; color: #333; font-weight: {% if not notif.is_read %}bold{% else %}normal{% endif %};">
+                                {{ notif.title }}</h4>
+                            <span dir="ltr" style="font-size: 0.85rem; color: #999; white-space: nowrap;">{{ notif.created_at|date:"Y-m-d h:i A" }}</span>
+                        </div>
+                        <p style="margin: 0; color: #555; font-size: 0.95rem; line-height: 1.6;">{{ notif.message }}</p>
+                    </div>
+
+                    {% if not notif.is_read %}
+                    <div class="notif-action" style="flex-shrink: 0;">
+                        <button onclick="markAsRead({{ notif.id }})"
+                            style="background: none; border: none; color: #2a756b; cursor: pointer; font-size: 1.2rem; padding: 5px;"
+                            title="تحديد كمقروء">
+                            <i class="far fa-check-circle"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state" style="text-align: center; padding: 60px 20px;">
+                <i class="far fa-bell-slash" style="font-size: 4rem; color: #ddd; margin-bottom: 20px;"></i>
+                <h3 style="color: #666; font-weight: bold; margin-bottom: 10px;">لا توجد إشعارات</h3>
+                <p style="color: #999;">أنت على اطلاع دائم! لا توجد إشعارات جديدة في حسابك حالياً.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // These functions use the getCookie CSRF setup we placed in base.html!
+
+    function markAsRead(notifId) {
+        // Construct the URL dynamically based on your views.py structure
+        const url = `/sponsor-dashboard/notifications/${notifId}/mark-read/`; // Adjust if your URL is different!
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                // Visually update the notification without reloading the page
+                const notifElement = document.getElementById(`notif-${notifId}`);
+                notifElement.style.backgroundColor = '#fff';
+                notifElement.style.border = '1px solid #eee';
+
+                // Unbold the title
+                const title = notifElement.querySelector('h4');
+                title.style.fontWeight = 'normal';
+
+                // Hide the check button
+                const actionDiv = notifElement.querySelector('.notif-action');
+                if (actionDiv) actionDiv.style.display = 'none';
+
+                // Change Icon color to gray
+                const iconDiv = notifElement.querySelector('div > i').parentElement;
+                iconDiv.style.background = '#f1f1f1';
+                iconDiv.style.color = '#888';
+            }
+        });
+    }
+
+    function markAllAsRead() {
+        const url = `/sponsor-dashboard/notifications/mark-all-read/`; // Adjust if your URL is different!
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                // Reload page to clear all badges perfectly
+                window.location.reload();
+            }
+        });
+    }
+</script>
+{% endblock %}

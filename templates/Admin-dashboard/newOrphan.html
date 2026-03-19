@@ -1,0 +1,71 @@
+{% extends 'Admin-dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="form-container">
+    <div class="title-form">إضافة يتيم جديد</div>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            <label style="font-weight: bold; color: #333;">اسم المستخدم (للدخول للنظام)</label>
+            <input type="text" name="username" class="form-control" placeholder="مثال: ahmad_2026" required dir="ltr"
+                style="background-color: #f8f9fa;">
+            <small style="color: gray; font-size: 12px;">* استخدم أحرف إنجليزية وأرقام فقط. هذا الاسم سيستخدم لتسجيل
+                الدخول.</small>
+            <label style="font-weight: bold; color: #333;">الاسم الرباعي (الاسم القانوني)</label>
+            <input type="text" name="name" class="form-control" placeholder="مثال: أحمد محمد علي محمود" required>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-weight: bold; color: #333;">كلمة المرور (للدخول للنظام)</label>
+                <input type="password" name="password" class="form-control" placeholder="تعيين كلمة مرور لليتيم"
+                    required dir="ltr" style="background-color: #f8f9fa;">
+            </div>
+            <div class="the-age">
+                <input type="number" name="age" placeholder="العمر" required>
+            </div>
+            <div class="the-sex">
+                <select name="gender" class="select-list-header" required>
+                    <option value="" disabled selected hidden>الجنس</option>
+                    <option value="Male">ذكر</option>
+                    <option value="Female">أنثى</option>
+                </select>
+            </div>
+            <div class="the-aria">
+                <input type="text" name="area" placeholder="المنطقة" required>
+            </div>
+            <div class="the-health">
+                <select name="health_status" class="select-list-header" required>
+                    <option value="" disabled selected hidden>الحالة الصحية</option>
+                    <option value="سليم">سليم</option>
+                    <option value="غير سليم">غير سليم</option>
+                </select>
+            </div>
+            <div class="the-social_stauts">
+                <select name="social_status" class="select-list-header" required>
+                    <option value="" disabled selected hidden>الحالة الإجتماعية</option>
+                    <option value="يتيم الأب">يتيم الأب</option>
+                    <option value="يتيم لأبوين">يتيم لأبوين</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="file-upload-container">
+            <label class="custom-file-upload">
+                <input type="file" name="image" class="file-input" accept="image/*">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>رفع الصورة</span>
+            </label>
+
+            <div class="document-number">
+                <label class="custom-file-upload">
+                    <input type="file" name="document" class="file-input" accept=".pdf,.doc,.docx,.jpg,.png">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>رفع الوثيقة (اختياري)</span>
+                </label>
+            </div>
+            <button type="submit" class="add-orphan">إضافة يتيم</button>
+            <a href="{% url 'manage_orphans' %}" class="cancle-btn" style="text-decoration:none;"> إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

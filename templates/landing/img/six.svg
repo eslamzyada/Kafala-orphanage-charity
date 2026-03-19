@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="150" height="150" viewBox="0 0 150 150">
+  <defs>
+    <clipPath id="clip-path">
+      <circle id="Ellipse_2" data-name="Ellipse 2" cx="75" cy="75" r="75" transform="translate(689 2560)" fill="#b0b0b0"/>
+    </clipPath>
+    <clipPath id="clip-path-2">
+      <circle id="Ellipse_116" data-name="Ellipse 116" cx="58.5" cy="58.5" r="58.5" transform="translate(595.375 1408.917)" fill="#fff" stroke="#707070" stroke-width="1"/>
+    </clipPath>
+  </defs>
+  <g id="Mask_Group_6" data-name="Mask Group 6" transform="translate(-689 -2560)" clip-path="url(#clip-path)">
+    <g id="Group_1242" data-name="Group 1242" transform="translate(104.625 1162.083)">
+      <g id="Group_125" data-name="Group 125">
+        <circle id="Ellipse_17" data-name="Ellipse 17" cx="75" cy="75" r="75" transform="translate(584.375 1397.917)" fill="#68af73"/>
+        <g id="Mask_Group_16" data-name="Mask Group 16" transform="translate(6 6)" clip-path="url(#clip-path-2)">
+          <g id="gui-view-details-svgrepo-com" transform="translate(604.152 1408.917)">
+            <path id="Path_209" data-name="Path 209" d="M20.267,10.667h99.468V127.688H20.267Z" transform="translate(-20.267 -10.667)" fill="none"/>
+            <path id="Path_210" data-name="Path 210" d="M39.467,76.675h11.7v11.7h-11.7Zm0-23.4h11.7v11.7h-11.7Zm0,46.809h11.7v11.7h-11.7Zm0-70.213h11.7v11.7h-11.7Zm23.4,46.809h40.958v11.7H62.871Zm0-23.4h40.958v11.7H62.871Zm0,46.809h40.958v11.7H62.871Zm0-70.213h40.958v11.7H62.871Z" transform="translate(-21.913 -12.313)" fill="#fff"/>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

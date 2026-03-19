@@ -1,0 +1,564 @@
+* {
+    font-family: 'Cairo', sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+ 
+}
+
+
+.navbar{
+    background-color: #fff;
+}
+.navbar-nav .nav-item .nav-link{
+    color:#383A49;
+    margin-left: 20px;
+}
+.navbar-nav .nav-item .nav-link.active{
+    color:#15635F;
+    margin-left: 20px;
+    font-weight: 600;
+}
+
+.navbar-nav .nav-item .nav-link.active:hover {
+    color: #00a7b5 !important;
+    transform: scale(1.05);
+}
+
+.navbar-nav .nav-item .nav-link.active::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #00a7b5;
+    transition: width 0.3s ease;
+}
+
+.navbar-nav .nav-item .nav-link.active:hover::after {
+    width: 100%;
+}
+.log{
+    background-color: #1A7975;
+    color: #fff;
+    font-weight: 600;
+    padding: 0.5rem 3rem;
+    border-radius: 25px;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    font-size: 1rem;
+}
+.sign {
+    background-color: transparent;
+    color: #2B726E;
+    border:1px solid #2B726E;
+    font-weight: 600;
+    padding: 0.5rem 3rem;
+    border-radius: 25px;
+    transition: all 0.3s ease, transform 0.3s ease;
+    font-size: 1rem;
+}
+.log:hover, .sign:hover {
+    background-color: #15635F;
+    transform: scale(1.05);
+    color: #fff;
+}
+
+.log:focus, .sign:focus {
+    outline: 2px solid #1A7975;
+    outline-offset: 2px;
+}
+
+.modal {
+  display: none; /* مخفي في البداية */
+  position: fixed;
+  z-index: 1;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: scroll;
+  background-color: rgba(0,0,0,0.4);
+  z-index: 11111111111;
+}
+.modal-content {
+  background-color: #fff;
+  width:50%;
+  min-height: 600px;
+  overflow: hidden;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0 auto;
+  padding:20px;
+  border-radius: 50px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.close ,.closee ,.closeee{
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  margin: 24px;
+  cursor: pointer;
+  text-align: end;
+}
+.user-inputs{
+    display: block;
+    margin: auto;
+    width: 70%;
+    height: 50px;
+    padding: 5px 20px;
+    margin-top: 16px;
+    border-radius: 5px;
+    border: 1px solid #cccccc;
+    font-style: 16px;
+    font-size: 16px;
+}
+.user-inputs::placeholder{
+    font-size: 16px;
+}
+.user-inputs:focus{
+   outline: none;
+}
+.upload-container {
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px dashed #ccc;
+      width: 70%;
+      margin: auto;
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .file-label {
+      display: inline-block;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #888;
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    .preview {
+      margin-top: 15px;
+    }
+
+    .preview img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+    }
+
+    .file-name {
+      margin-top: 10px;
+      color: #333;
+    }
+.divFor{
+    width: 70%;
+    margin: 20px auto;
+    text-align: end;
+    
+}
+.forgotpass{
+    font-size: 16px;
+    text-decoration: none;
+    color: #2B726E;
+    text-align: end;
+}
+.link-sign{
+    font-size: 16px;
+}
+.link-sign a{
+    text-decoration: none;
+    color: #2B726E;
+}
+.login-btn{
+    display: block;
+    width: 70%;
+    height: 50px;
+    padding: 7px 20px;
+    margin: auto;
+    background-color: #2B726E;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+.title-modal{
+    font-size: 18px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+
+}
+.close:hover, .closee:hover , .closeee:hover{
+  color: red;
+}
+body {
+    margin: 0;
+    background-color: #f8fafc; /* خلفية فاتحة للموقع */
+}
+.live {
+    color: #015c68;
+    font-weight: 700;
+
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+.img-hero{
+    width:600px ;
+}
+.know {
+    background: linear-gradient(90deg, #015c68, #00a7b5);
+    color: #fff;
+    border-radius: 25px;
+    border: none;
+    padding: 10px 24px;
+    font-weight: 600;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.know:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(1, 92, 104, 0.3);
+}
+
+.yatem {
+    background: #fff;
+    color: #015c68;
+    border-radius: 25px;
+    border: 2px solid #015c68;
+    padding: 10px 24px;
+    font-weight: 600;
+    transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+
+.yatem:hover {
+    background: #015c68;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.card {
+    border-radius: 20px;
+    border: none;
+    width: 30%;
+    margin: 0 1.5% 20px;
+    background: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.card img {
+    border-radius: 20px 20px 0 0;
+    object-fit: cover;
+    width: 100%;
+    height: 200px;
+    margin: 0;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.card:hover img {
+    transform: scale(1.05);
+}
+
+.card-body {
+    padding: 20px;
+    text-align: center;
+}
+
+.card-title {
+    color: #2A5F5A;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+.card-text {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+}
+
+.bounce-animation {
+    animation: bounce 0.8s ease-in-out;
+}
+
+@keyframes bounce {
+    0% { transform: scale(1); }
+    20% { transform: scale(1.15); }
+    40% { transform: scale(0.95); }
+    60% { transform: scale(1.05); }
+    80% { transform: scale(0.98); }
+    100% { transform: scale(1); }
+}
+
+.icon {
+    width: 60px;
+    height: 60px;
+    filter: invert(20%) sepia(80%) saturate(500%) hue-rotate(160deg);
+    transition: transform 0.3s ease;
+    margin-left: 20px;
+}
+
+.icon:hover {
+    transform: scale(1.1);
+}
+.goals-list{
+    padding: 40px;
+}
+.goals-list ul {
+    text-align: right;
+    direction: rtl;
+    padding-right: 20px;
+    margin-top: 20px;
+}
+
+.goals-list li {
+    margin-bottom: 20px;
+    color: #555;
+}
+.img-qu{
+    width: 100%;
+}
+.new-class {
+    width: 100%;
+    background: linear-gradient(90deg, #015c68, #00a7b5);
+    height: 100px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    margin-top: 60px;
+}
+
+.social-links a {
+    color: #fff;
+    margin: 0 10px;
+    font-size: 1.2rem;
+    transition: color 0.3s ease;
+}
+
+.social-links a:hover {
+    color: #e0e0e0;
+}
+
+section {
+    padding: 80px 0;
+}
+
+.hero-section {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #f8fafc 50%, #e6f0fa 100%);
+}
+
+.about-section {
+    background-color: #fff;
+}
+.content-about{
+    line-height: 40px;
+}
+.principles-section {
+    background: linear-gradient(135deg, #e6f0fa 50%, #f8fafc 100%);
+}
+
+.services-section {
+    background-color: #fff;
+}
+
+.contact-section {
+    background: linear-gradient(135deg, #f8fafc 50%, #e6f0fa 100%);
+}
+
+
+
+@media (max-width: 400px) {
+    .card {
+        width: 95%;
+    }
+    .card img {
+        height: 140px;
+    }
+    .card-title {
+        font-size: 1rem;
+    }
+    .card-text {
+        font-size: 0.85rem;
+    }
+    .modal-content {
+    width:90%;
+    }
+    
+    .user-inputs{
+        display: block;
+        margin: auto;
+        width: 90%;
+        height: 40px;
+        padding: 5px 20px;
+        margin-top: 12px;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        font-style: 16px;
+        font-size: 16px;
+    }
+        .login-btn{
+        display: block;
+        width: 90%;
+        height: 40px;
+        padding: 5px 20px;
+        margin-top: 16px;
+    }
+    .upload-container {
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px dashed #ccc;
+      width: 90%;
+      margin: auto;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .img-hero{
+        margin-top:40px;
+    }
+
+    .content-hero{
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .card {
+        width: 90%;
+        margin: 0 auto 20px;
+    }
+    .card img {
+        height: 150px;
+    }
+    
+    section {
+        padding: 40px 0;
+    }
+    .card-title {
+        font-size: 1rem;
+    }
+    .card-text {
+        font-size: 0.85rem;
+    }
+    .modal-content {
+    width:90%;
+    }
+    
+    .user-inputs{
+        display: block;
+        margin: auto;
+        width: 90%;
+        height: 40px;
+        padding: 5px 20px;
+        margin-top: 12px;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        font-style: 16px;
+        font-size: 16px;
+    }
+        .login-btn{
+        display: block;
+        width: 90%;
+        height: 40px;
+        padding: 5px 20px;
+        margin-top: 16px;
+    }
+    .upload-container {
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px dashed #ccc;
+      width: 90%;
+      margin: auto;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .img-hero{
+        margin-top:100px;
+    }
+    .content-hero{
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 1200px) {
+     .card {
+        width: 90%;
+        margin: 0 auto 20px;
+    }
+   .img-qu{
+    margin-bottom: 30px;
+   }
+    
+    .modal-content {
+
+    width:90%;
+    min-height: 821px;
+    }
+.card-title {
+        font-size: 1rem;
+    }
+    .card-text {
+        font-size: 0.85rem;
+    }
+    .modal-content {
+    width:90%;
+    }
+    
+    .user-inputs{
+        display: block;
+        margin: auto;
+        width: 90%;
+        height: 40px;
+        padding: 5px 20px;
+        margin-top: 12px;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        font-style: 16px;
+        font-size: 16px;
+    }
+        .login-btn{
+        display: block;
+        width: 90%;
+        height: 40px;
+        padding: 5px 20px;
+        margin-top: 16px;
+    }
+    .upload-container {
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px dashed #ccc;
+      width: 90%;
+      margin: auto;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .img-hero{
+        margin-top:100px;
+        width: 400px;
+    }
+    .content-hero{
+        font-size: 12px;
+    }
+   .serv{
+    flex-direction: column;
+   }
+}
+

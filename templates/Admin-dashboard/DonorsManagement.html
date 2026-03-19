@@ -1,0 +1,114 @@
+{% extends 'Admin-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}إدارة الكافلين | كفالة{% endblock %}
+
+{% block content %}
+<div class="title-content">
+    <p class="head-title">إدارة الكافلين</p>
+    <a href="{% url 'add_donor' %}" class="add-donor"> <i class="fas fa-add add-btn"></i>إضافة كافل</a>
+</div>
+
+<div class="search-eara">
+    <div type="submit">
+        <input type="text" id="searchInput" placeholder="ابحث بالاسم أو البريد..." onkeyup="filterDonors()">
+    </div>
+
+    <select id="typeFilter" class="select-list-header" onchange="filterDonors()">
+        <option value="">النوع (الكل)</option>
+        <option value="فرد">فرد</option>
+        <option value="مؤسسة">مؤسسة</option>
+    </select>
+
+    <select id="statusFilter" class="select-list-header" onchange="filterDonors()">
+        <option value="">حالة الحساب (الكل)</option>
+        <option value="active">فعال</option>
+        <option value="inactive">غير فعال</option>
+    </select>
+</div>
+
+<div class="card-body table-responsive" style="max-width: 90%; margin-right: 15px;">
+    <table class="table table-hover text-wrap table-lg" style="border-radius: 10px; overflow: hidden;">
+        <thead>
+            <tr>
+                <th>رقم الكافل</th>
+                <th>الأسم</th>
+                <th>البريد الإلكتروني</th>
+                <th>رقم الهاتف</th>
+                <th>حالة الحساب</th>
+                <th rowspan="4">الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for donor in donors %}
+            <tr class="donor-row">
+                <td>{{ donor.id }}</td>
+                <td class="donor-name">{{ donor.name }}</td>
+                <td class="donor-email">{{ donor.email }}</td>
+                <td>{{ donor.phone|default:"غير متوفر" }}</td>
+
+                {% if donor.is_active %}
+                <td class="donor-status" data-status="active" style="color: #68AF73; font-weight: bold;">فعال</td>
+                {% else %}
+                <td class="donor-status" data-status="inactive" style="color: #fbba04; font-weight: bold;">غير فعال</td>
+                {% endif %}
+
+                <td class="stutes">
+                    <a href="{% url 'edit_donor' donor.id %}" class="edit-donor"
+                        style="text-decoration: none;">تعديل</a>
+                    <form method="POST" action="{% url 'delete_donor' donor.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="delete-orphan"
+                            style="border:none; cursor:pointer; background:none;"
+                            onclick="return confirm('هل أنت متأكد من حذف هذا الكافل نهائياً؟')">حذف</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: #777; font-weight: bold;">
+                    لا يوجد كافلين مسجلين في النظام حالياً.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% block extra_scripts %}
+<script>
+    // The Arabic Normalizer
+    function normalizeArabic(text) {
+        if (!text) return "";
+        return text.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase().trim();
+    }
+
+    function filterDonors() {
+        let searchValue = normalizeArabic(document.getElementById("searchInput").value);
+        let statusValue = document.getElementById("statusFilter").value;
+        // let typeValue = document.getElementById("typeFilter").value; // Ready for when you add Type to DB
+
+        let rows = document.querySelectorAll(".donor-row");
+
+        rows.forEach(row => {
+            let name = normalizeArabic(row.querySelector(".donor-name").innerText);
+            let email = row.querySelector(".donor-email").innerText.toLowerCase();
+            let status = row.querySelector(".donor-status").getAttribute("data-status");
+
+            // 1. Search Check (Matches either Name OR Email!)
+            let matchesSearch = name.includes(searchValue) || email.includes(searchValue);
+
+            // 2. Strict Status Check (Using data-status attributes for perfection)
+            let matchesStatus = (statusValue === "") || (status === statusValue);
+
+            // Apply the filter
+            if (matchesSearch && matchesStatus) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}

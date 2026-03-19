@@ -1,0 +1,181 @@
+{% extends 'Donor-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}إدارة الكفالات | كفالة{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="sponsorships-container" style="max-width: 95%; margin: 0 auto;">
+
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+            <h2 style="color: #2a756b; font-weight: bold; margin: 0;">إدارة كفالاتي</h2>
+
+            <div class="search-eara" style="margin: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <div type="submit" style="background: none;">
+                    <input type="text" id="searchInput" placeholder="ابحث باسم اليتيم..." onkeyup="filterSponsorships()"
+                        style="border: 1px solid #eee; border-radius: 5px; padding: 8px 15px;">
+                </div>
+
+                <select id="statusFilter" class="select-list-header" onchange="filterSponsorships()"
+                    style="border: 1px solid #eee; border-radius: 5px; padding: 8px;">
+                    <option value="">كل الحالات</option>
+                    <option value="Active">نشطة</option>
+                    <option value="Pending">قيد المراجعة</option>
+                    <option value="Ended">منتهية</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="sponsorships-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding: 10px 0;">
+            {% for sponsorship in sponsorships %}
+            <div class="spon-card"
+                style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; position: relative; overflow: hidden;">
+
+                <div
+                    style="position: absolute; top: 0; left: 0; right: 0; height: 5px; background-color: {% if sponsorship.status == 'Active' %}#68AF73{% elif sponsorship.status == 'Pending' %}#fbba04{% else %}#888{% endif %};">
+                </div>
+
+                <div class="sponsorship-header"
+                    style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                    <h3 class="spon-orphan-name" style="margin: 0; font-size: 1.2rem; font-weight: bold; color: #333;">
+                        {{ sponsorship.orphan.name }}</h3>
+                    <span class="spon-status" data-status="{{ sponsorship.status }}"
+                        style="font-size: 0.8rem; padding: 5px 12px; border-radius: 15px; font-weight: bold; color: white; background-color: {% if sponsorship.status == 'Active' %}#68AF73{% elif sponsorship.status == 'Pending' %}#fbba04{% else %}#888{% endif %};">
+                        {% if sponsorship.status == 'Active' %}نشطة{% elif sponsorship.status == 'Pending' %}قيد
+                        المراجعة{% else %}منتهية{% endif %}
+                    </span>
+                </div>
+
+                <div class="sponsorship-details" style="color: #666; font-size: 0.95rem; line-height: 1.8;">
+                    <p style="margin: 0;"><strong>العمر:</strong> {{ sponsorship.orphan.age }} سنة</p>
+                    <p style="margin: 0;"><strong>الجنس:</strong> {% if sponsorship.orphan.gender == 'Male' %}ذكر{% else %}أنثى{% endif %}</p>
+                    <p style="margin: 0;"><strong>تاريخ البدء:</strong> <span dir="ltr">{{ sponsorship.start_date|date:"Y-m-d" }}</span></p>
+                </div>
+
+                <div class="sponsorship-actions"
+                    style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center;">
+                    <a href="javascript:void(0);"
+                        onclick="document.getElementById('orphanModal_{{ sponsorship.id }}').style.display='block'"
+                        style="flex: 1; background: #eef2f6; color: #2a756b; padding: 8px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: 0.2s;">التفاصيل
+                        والملفات</a>
+
+                    {% if sponsorship.status == 'Active' %}
+                    <form action="{% url 'initiate_sponsorship_payment' sponsorship.id %}" method="POST"
+                        style="flex: 1; margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit"
+                            style="width: 100%; background: #006dff; color: white; padding: 8px 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;">دفع
+                            الكفالة</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state"
+                style="grid-column: 1 / -1; text-align: center; background: white; padding: 50px 20px; border-radius: 12px; border: 1px dashed #ccc;">
+                <i class="fas fa-box-open" style="font-size: 3rem; color: #ccc; margin-bottom: 15px;"></i>
+                <p style="font-size: 1.2rem; color: #666; font-weight: bold;">لا يوجد كفالات مسجلة في حسابك حتى الآن</p>
+                <a href="{% url 'donor_orphans' %}"
+                    style="display: inline-block; margin-top: 15px; background: #006dff; color: white; padding: 10px 25px; border-radius: 8px; text-decoration: none; font-weight: bold;">تصفح
+                    الأيتام المتاحين للكفالة</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% for sponsorship in sponsorships %}
+<div id="orphanModal_{{ sponsorship.id }}" class="modalshow"
+    style="display: none; position: fixed; z-index: 999999; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(0,0,0,0.6); overflow-y: auto;">
+    <div
+        style="background-color: white; width: 90%; max-width: 500px; margin: 10vh auto; border-radius: 12px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.4); position: relative; direction: rtl; text-align: right; overflow: hidden;">
+
+        <div
+            style="background-color: #2a756b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; font-weight: bold; font-size: 1.2rem;">تفاصيل الكفالة</h4>
+            <span onclick="document.getElementById('orphanModal_{{ sponsorship.id }}').style.display='none'"
+                style="cursor: pointer; font-size: 28px; line-height: 1;">&times;</span>
+        </div>
+
+        <div style="padding: 25px; color: #333; line-height: 1.8;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h3 style="color: #2a756b; margin-bottom: 5px;">{{ sponsorship.orphan.name }}</h3>
+                <span
+                    style="display: inline-block; background-color: {% if sponsorship.status == 'Active' %}#68AF73{% elif sponsorship.status == 'Pending' %}#fbba04{% else %}#888{% endif %}; color: white; padding: 3px 12px; border-radius: 12px; font-size: 0.85rem;">
+                    {% if sponsorship.status == 'Active' %}كفالة نشطة{% elif sponsorship.status == 'Pending' %}بإنتظار
+                    الموافقة{% else %}كفالة منتهية{% endif %}
+                </span>
+            </div>
+
+            <div
+                style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
+                    <strong>العمر:</strong> {{ sponsorship.orphan.age }} سنة</p>
+                <p style="margin: 0 0 10px 0; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
+                    <strong>الجنس:</strong> {% if sponsorship.orphan.gender == 'Male' %}ذكر{% else %}أنثى{% endif %}</p>
+                <p style="margin: 0 0 10px 0; border-bottom: 1px solid #ddd; padding-bottom: 5px;"><strong>تاريخ
+                        البدء:</strong> <span dir="ltr">{{ sponsorship.start_date|date:"Y-m-d" }}</span></p>
+            </div>
+
+            <div>
+                <h5
+                    style="color: #2a756b; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px;">
+                    <i class="fas fa-folder-open"></i> تقارير وملفات اليتيم
+                </h5>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    {% if sponsorship.orphan.get_public_documents %}
+                    {% for doc in sponsorship.orphan.get_public_documents %}
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; background: white; border: 1px solid #e0e0e0; padding: 12px 15px; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class="fas {% if doc.document_type == 'Education' %}fa-graduation-cap text-primary{% elif doc.document_type == 'Medical' %}fa-notes-medical text-danger{% elif doc.document_type == 'Media' %}fa-image text-success{% else %}fa-file-alt text-secondary{% endif %}"
+                                style="font-size: 1.5rem;"></i>
+                            <div>
+                                <h6 style="margin: 0; font-weight: bold; color: #333; font-size: 0.95rem;">{{ doc.title }}</h6>
+                                <span dir="ltr" style="font-size: 0.75rem; color: #888;">{{ doc.uploaded_at|date:"Y-m-d" }}</span>
+                            </div>
+                        </div>
+                        <a href="{{ doc.document.url }}" target="_blank"
+                            style="background: #eef2f6; color: #006dff; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-size: 0.85rem; font-weight: bold;">
+                            <i class="fas fa-download"></i> تحميل
+                        </a>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p style="text-align: center; color: #888; font-size: 0.9rem; margin: 10px 0;">لا توجد تقارير أو
+                        ملفات متاحة حالياً.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function normalizeArabic(text) {
+        if (!text) return "";
+        return text.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase().trim();
+    }
+    function filterSponsorships() {
+        let searchValue = normalizeArabic(document.getElementById("searchInput").value);
+        let statusValue = document.getElementById("statusFilter").value;
+        let cards = document.querySelectorAll(".spon-card");
+        cards.forEach(card => {
+            let orphanName = normalizeArabic(card.querySelector(".spon-orphan-name").innerText);
+            let sponStatus = card.querySelector(".spon-status").getAttribute("data-status");
+            let matchesSearch = orphanName.includes(searchValue);
+            let matchesStatus = (statusValue === "") || (sponStatus === statusValue);
+            if (matchesSearch && matchesStatus) { card.style.display = ""; } else { card.style.display = "none"; }
+        });
+    }
+    window.onclick = function (event) {
+        if (event.target.classList.contains('modalshow')) { event.target.style.display = "none"; }
+    }
+</script>
+{% endblock %}

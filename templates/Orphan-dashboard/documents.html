@@ -1,0 +1,120 @@
+{% extends 'Orphan-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}الوثائق والمستندات{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="title-content">
+        <h3 class="document-title">الوثائق و المستندات</h3>
+        <a href="#" class="btn-download upload-document" id="openUploadModal">رفع وثيقة </a>
+
+        <div id="uploadModal" class="modal" style="display: none;">
+            <div class="popup-content">
+                <span class="close-modal-btn" style="float: left; cursor: pointer; font-size: 24px;">&times;</span>
+                <p> إضافة وثيقة جديدة</p>
+                <hr>
+                <form method="POST" enctype="multipart/form-data" action="{% url 'orphan_documents' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" id="fullName" name="title" placeholder="أسم الوثيقة" required class="form-control mb-3">
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" id="dataDate" name="description" placeholder="وصف الوثيقة" class="form-control mb-3">
+                    </div>
+
+                    <div class="document-number" style="margin-bottom: 20px;">
+                        <label class="custom-file-upload" style="cursor: pointer; display: inline-block; padding: 10px; background: #f8f9fa; border: 1px dashed #ccc; border-radius: 5px; width: 100%; text-align: center;">
+                            <input type="file" name="file" class="file-input" required style="display: none;" id="actualFileInput">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 24px; color: #006dff; display: block; margin-bottom: 5px;"></i>
+                            <span id="fileChosenText">انقر لاختيار ملف (PDF, JPG, PNG)</span>
+                        </label>
+                    </div>
+                    
+                    <div class="popbtn" style="display: flex; gap: 10px; justify-content: center;">
+                        <button type="submit" class="save-btn btn btn-primary">رفع الوثيقة</button>
+                        <button type="button" class="cancle-btn close-modal-btn btn btn-secondary">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if upload_error %}
+    <div class="alert alert-danger" style="max-width: 95%; margin-top: 10px;">
+        {{ upload_error }}
+    </div>
+    {% endif %}
+
+    <div class="card-body table-responsive responsive-table" style="max-width: 95%; margin-top: 20px;">
+        <table class="table table-hover text-wrap table-lg" style="border-radius: 10px; overflow: hidden; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+            <thead style="background-color: #f8f9fa;">
+                <tr>
+                    <th>الرقم </th>
+                    <th>الأسم </th>
+                    <th> تاريخ الرفع </th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for document in orphan.documents.all %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td style="font-weight: bold;">{{ document.title }}</td>
+                    <td dir="ltr" style="text-align: right;">{{ document.uploaded_at|date:"Y/m/d" }}</td>
+                    <td class="stutes">
+                        <a href="{{ document.file.url }}" target="_blank" class="accept-guarantee btn-view" style="margin-left: 5px;">عرض</a>
+                        <a href="#" class="renew-guarantee btn-download" style="margin-left: 5px;">تعديل</a>
+                        <a href="#" class="delete-orphan" style="color: white; background: #dc3545; padding: 5px 15px; border-radius: 5px; text-decoration: none;">حذف</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 30px; color: gray;">لا توجد وثائق مرفوعة حتى الآن. انقر على "رفع وثيقة" لإضافة ملفاتك.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var modal = document.getElementById("uploadModal");
+    var btn = document.getElementById("openUploadModal");
+    var closeBtns = document.querySelectorAll(".close-modal-btn");
+
+    btn.onclick = function(e) {
+        e.preventDefault(); 
+        modal.style.display = "flex"; 
+        modal.style.alignItems = "center";
+        modal.style.justifyContent = "center";
+        modal.style.backgroundColor = "rgba(0,0,0,0.5)"; 
+        modal.style.position = "fixed";
+        modal.style.top = "0";
+        modal.style.left = "0";
+        modal.style.width = "100%";
+        modal.style.height = "100%";
+        modal.style.zIndex = "9999";
+    }
+
+    closeBtns.forEach(function(btn) {
+        btn.onclick = function() {
+            modal.style.display = "none";
+        }
+    });
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    document.getElementById('actualFileInput').addEventListener('change', function() {
+        var fileName = this.files[0] ? this.files[0].name : 'انقر لاختيار ملف (PDF, JPG, PNG)';
+        document.getElementById('fileChosenText').textContent = fileName;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'Orphan-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}الرئيسية{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="header">
+        <div class="welcome-message">مرحباً بك : <span>{{ orphan.name|default:"مستخدم جديد" }}</span> <br>
+            <p class="text-message"> نتمنى لك يوماً سعيداً ومليئاً بالنجاح.</p>
+        </div>
+    </div>
+    
+    <div class="main-cards">
+        <div class="card1">
+            <p class="title-card">تفاصيل كفالتي</p>
+            <div class="underline-title"></div>
+            {% if sponsorship %}
+                <p>كفيلك الحالي : <span>{{ sponsorship.donor.name }}</span></p>
+                <p>نوع الكفالة : <span>{{ sponsorship.get_sponsorship_type_display }}</span></p>
+                <p>تاريخ بدء الكفالة : <span>{{ sponsorship.start_date|date:"Y/m/d" }}</span></p>
+                <p>الحالة : <span style="background-color: #68af73; padding: 5px 7px; border-radius: 15px; color: white;">نشطة</span></p>
+            {% else %}
+                <p>حالة الكفالة : <span>في الانتظار</span></p>
+                <p>لم يتم تخصيص كفيل حتى الآن.</p>
+            {% endif %}
+        </div>
+        
+        <div class="card2">
+            {% if orphan.image %}
+                <img src="{{ orphan.image.url }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" alt="صورة {{ orphan.name }}">
+            {% else %}
+                <img src="{% static 'img/Screenshot 2025-05-17 082043.png' %}" style="width: 80px; height:80px;" alt="صورة افتراضية">
+            {% endif %}
+            <div class="underline-title"></div>
+            <p> الأسم : <span>{{ orphan.name|default:"غير متوفر" }}</span></p>
+            <p> العمر : <span>{{ orphan.age|default:"غير متوفر" }}</span></p>
+            <p>المنطقة : <span>{{ orphan.area|default:"غير متوفر" }}</span></p>
+            <a href="{% url 'orphan_edit_profile' %}" class="btn btn-primary">تعديل البيانات </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
