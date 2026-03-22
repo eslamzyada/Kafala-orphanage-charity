@@ -1,8 +1,9 @@
 import stripe
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import logout
-from .models import Orphan, Donor, Sponsorship, Payment, Notification, Document
+from .models import Orphan, Donor, Sponsorship, Payment, Notification, Document, Guardian
 import json
+from django.contrib import messages
 from django.db.models import Count
 from django.db.models.functions import ExtractMonth
 from django.utils import timezone
@@ -15,7 +16,7 @@ import random
 from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse  
 import google.generativeai as genai
 import requests
 import os
@@ -29,40 +30,67 @@ def kafala_ai_assistant(request):
         try:
             data = json.loads(request.body)
             user_message = data.get('message', '')
-
             api_key = os.getenv('GEMINI_API_KEY')
             
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
 
-            if request.user.is_authenticated and request.user.is_staff:
-                system_instruction = """
-                أنت مساعد الإدارة الذكي والنخبة في لوحة تحكم منصة "كفالة" لرعاية الأيتام.
-                أنت تتحدث الآن مع "مدير النظام" (الآدمن)، وهو الشخص الذي يمتلك الصلاحيات المطلقة والكاملة للتحكم في كل أجزاء المنصة.
-                
-                يجب أن تعلم أن مدير النظام يمكنه القيام بما يلي من خلال لوحة التحكم الخاصة به:
-                1. إدارة الكفلاء (المتبرعين): عرض بياناتهم، تعديل تفاصيل حساباتهم، إيقاف أو حذف حسابات الكفلاء بالكامل.
-                2. إدارة الأيتام: إضافة أيتام جدد، تعديل بياناتهم وحالتهم (الصحية والاجتماعية)، وحذف السجلات إذا لزم الأمر.
-                3. إدارة الكفالات: ربط الكفلاء بالأيتام، متابعة حالة الكفالات (نشطة، منتهية، بانتظار الدفع)، وإلغاؤها.
-                4. الإدارة المالية: مراجعة واعتماد الحوالات البنكية وإيصالات الدفع اليدوية، والاطلاع على الإحصائيات المالية.
-                5. إدارة الوثائق: رفع التقارير المدرسية والصحية وتحديثها.
-                
-                قواعد الإجابة:
-                - أجب باحترافية شديدة وبصيغة الاحترام والتقدير للمدير.
-                - إذا سألك المدير عن كيفية التعديل أو الحذف، أخبره أن الصلاحيات متوفرة، ووجهه للذهاب إلى "القسم المخصص" (مثل قسم إدارة الكفلاء أو إدارة الأيتام) في القائمة الجانبية لإجراء التعديل.
-                - لا تقل أبداً "لا تتوفر صلاحية"، لأن المدير يملك كل الصلاحيات.
+            base_instruction = """
+            أنت المساعد الذكي الرسمي لمنصة "كفالة" لرعاية الأيتام. 
+            أجب دائماً باللغة العربية الفصحى، بأسلوب احترافي، مباشر، ومتعاطف.
+            وظيفتك إرشاد المستخدم خطوة بخطوة داخل المنصة وعدم اختراع أي معلومات غير موجودة هنا.
+            """
+
+            role_instruction = ""
+
+            if not request.user.is_authenticated:
+                role_instruction = """
+                أنت تتحدث الآن مع "زائر غير مسجل".
+                - هدفك: تشجيعه على التسجيل وتوضيح آلية العمل.
+                - الأزرار المتاحة له: زر "تسجيل جديد" أعلى الشاشة، وزر "التبرع العام".
+                - أنواع التسجيل: يمكنه التسجيل كـ "كفيل (متبرع)" أو "يتيم/وصي (مستفيد)".
+                - اشرح له أن المنصة آمنة وتقتطع فقط 1% كرسوم تشغيل لضمان وصول 99% من التبرعات لليتيم.
                 """
-            else:
-                system_instruction = """
-                أنت موظف دعم فني محترف في منصة "كفالة" للأيتام. 
-                أجب دائماً باللغة العربية الفصحى باختصار، وبشكل مباشر وودود. 
-                معلومات المنصة: الدفع متاح عبر البطاقات الائتمانية (Stripe) و PalPay. 
-                يمكن للكفيل متابعة تقارير اليتيم من صفحة "إدارة كفالاتي". 
-                لا تخترع أي معلومات غير موجودة هنا.
+            
+            elif request.user.is_superuser:
+                role_instruction = """
+                أنت تتحدث الآن مع "مدير النظام" (الآدمن). له الصلاحية المطلقة.
+                - مسار لوحة التحكم: /admin-dashboard/
+                - الأزرار والإجراءات المتاحة له في القائمة الجانبية:
+                  1. "إدارة الأيتام": يمكنه رؤية الأيتام الجدد (بحالة Pending)، قراءة "مستند الوصاية" الذي رفعه الوصي، والضغط على زر "اعتماد" ليصبح اليتيم (Available).
+                  2. "إدارة الكفلاء": تعديل بيانات المتبرعين.
+                  3. "الكفالات": ربط وإلغاء الكفالات بين الكفيل واليتيم.
+                  4. "المدفوعات": مراجعة الحوالات البنكية أو الدفع النقدي وتأكيد استلام الأموال.
+                - لا تقل للمدير أبداً "ليس لديك صلاحية". وجهه دائماً للقسم المناسب في القائمة الجانبية.
                 """
+            
+            elif Donor.objects.filter(email=request.user.email).exists():
+                role_instruction = """
+                أنت تتحدث الآن مع "كفيل (متبرع)".
+                - مسار لوحة التحكم: /sponsor-dashboard/
+                - الأزرار والإجراءات المتاحة له:
+                  1. صفحة "الأيتام المتاحين": يمكنه تصفح الأيتام والضغط على زر "أكفل الآن".
+                  2. صفحة "سجل المدفوعات": للقيام بدفع الكفالة.
+                - آليات الدفع المتاحة له:
+                  * البطاقة الائتمانية (Stripe): توضح له أن هناك رسوم تشغيل شفافة بنسبة 1% تضاف لفاتورة الدفع.
+                  * حوالة بنكية / محفظة إلكترونية (PalPay) / دفع نقدي: في هذه الحالة يجب عليه رفع "صورة الإيصال" أو إدخال رقم الحوالة في النظام ليقوم المدير بمراجعتها.
+                - وجه الكفيل دائماً لصفحة "سجل المدفوعات" إذا سأل عن كيفية دفع المبالغ المستحقة.
+                """
+            
+            elif Orphan.objects.filter(username=request.user.username).exists():
+                role_instruction = """
+                أنت تتحدث الآن مع "وصي اليتيم".
+                - مسار لوحة التحكم: /orphan-dashboard/
+                - الأزرار والإجراءات المتاحة له:
+                  1. صفحة "بياناتي": يجب عليه استكمال بياناته مثل "طريقة استلام الكفالة" (حوالة بنكية، محفظة إلكترونية، استلام نقدي) ورقم الحساب.
+                  2. صفحة "الوثائق": يمكنه الضغط على "رفع مستند" لإضافة الشهادات المدرسية أو التقارير الطبية لليتيم ليراها الكفيل.
+                - معلومة هامة جداً: إذا سأل عن سبب عدم حصوله على كفالة بعد، أخبره أن حسابه يكون مبدئياً "قيد المراجعة" (Pending) حتى تقوم إدارة المنصة بمراجعة "مستند الوصاية" الذي قام برفعه أثناء التسجيل واعتماده.
+                """
+
+            final_system_instruction = base_instruction + "\n" + role_instruction
 
             payload = {
                 "system_instruction": {
-                    "parts": [{"text": system_instruction}]
+                    "parts": [{"text": final_system_instruction}]
                 },
                 "contents": [
                     {"parts": [{"text": user_message}]}
@@ -70,7 +98,6 @@ def kafala_ai_assistant(request):
             }
             
             headers = {'Content-Type': 'application/json'}
-
             response = requests.post(url, json=payload, headers=headers)
             response_data = response.json()
 
@@ -124,22 +151,33 @@ def details(request):
 
 def login_view(request):
     if request.method == 'POST':
-        u = request.POST.get('username')
+        u = request.POST.get('username') 
         p = request.POST.get('password')
+        
+        print(f"DEBUG: Form submitted! Trying to log in as -> Username: '{u}'")
+        
         user = authenticate(request, username=u, password=p)
+        
+        print(f"DEBUG: Did Django find this user in the database? -> {user}")
         
         if user is not None:
             login(request, user)
+            print(f"DEBUG: Login successful! Checking roles for user: {user.username}")
             
             if user.is_superuser:
-                return redirect('/admin-dashboard/') 
+                return redirect('admin_dashboard') 
+                
             elif Donor.objects.filter(email=user.email).exists():
                 return redirect('sponsor_dashboard')
+                
             elif Orphan.objects.filter(username=user.username).exists():
                 return redirect('orphan_dashboard')
+                
             else:
+                messages.error(request, "تم تسجيل الدخول، ولكن حسابك غير مسجل ككفيل أو يتيم.")
                 return redirect('index')
         else:
+            messages.error(request, "اسم المستخدم أو كلمة المرور غير صحيحة.")
             return redirect('index')
             
     return redirect('index')
@@ -165,37 +203,63 @@ def register_view(request):
                     return redirect('index') 
 
         elif user_type == 'supported':
-            username = request.POST.get('orphan_username')
-            password = request.POST.get('orphan_password')
-            name = request.POST.get('orphan_name')
+            username = request.POST.get('guardian_username')
+            password = request.POST.get('guardian_password')
+            g_name = request.POST.get('guardian_name')
+            g_id = request.POST.get('guardian_id')
+            g_phone = request.POST.get('guardian_phone')
+            g_relation = request.POST.get('guardian_relation')
+            g_email = request.POST.get('guardian_email')
+            legal_doc = request.FILES.get('legal_document')
+            payout_method = request.POST.get('payout_method', 'Cash')
+            payout_details = request.POST.get('payout_details', '')
             
-            age = request.POST.get('orphan_age')
-            gender = request.POST.get('orphan_gender')
-            area = request.POST.get('orphan_area')
-            social_status = request.POST.get('orphan_social')
-            health_status = request.POST.get('orphan_health')
-            image = request.FILES.get('orphan_photo')
+            o_name = request.POST.get('orphan_name')
+            o_age = request.POST.get('orphan_age')
+            o_gender = request.POST.get('orphan_gender')
+            o_area = request.POST.get('orphan_area')
+            o_social = request.POST.get('orphan_social')
+            o_health = request.POST.get('orphan_health')
+            o_photo = request.FILES.get('orphan_photo')
             
-            if username and password and name:
+            if username and password and g_name and o_name and g_email:
                 if not User.objects.filter(username=username).exists():
-                    user = User.objects.create_user(username=username, password=password)
-                    Orphan.objects.create(
-                        username=username,  
-                        name=name,          
-                        age=age if age else None,
-                        gender=gender,
-                        area=area,
-                        social_status=social_status,
-                        health_status=health_status,
-                        image=image
+                    
+                    user = User.objects.create_user(username=username, email=g_email, password=password)    
+
+                    guardian = Guardian.objects.create(
+                        user=user,
+                        name=g_name,
+                        id_number=g_id,
+                        phone=g_phone,
+                        relation_to_orphan=g_relation,
+                        legal_document=legal_doc,
+                        payout_method=payout_method,
+                        payout_details=payout_details,
+                        is_approved=False 
                     )
+                    
+                    Orphan.objects.create(
+                        username=username,
+                        guardian=guardian,
+                        name=o_name,          
+                        age=o_age if o_age else None,
+                        gender=o_gender,
+                        area=o_area,
+                        social_status=o_social,
+                        health_status=o_health,
+                        image=o_photo,
+                        sponsorship_status='Pending'
+                    )
+                    
                     login(request, user)
                     return redirect('orphan_dashboard')
                 else:
-                    print("Error: Username already exists!")
+                    messages.error(request, "اسم المستخدم هذا مسجل مسبقاً، يرجى اختيار اسم آخر.")
                     return redirect('index')
                     
-    return redirect('index')
+        return redirect('index')
+                    
 
 def logout_view(request):
     logout(request)
@@ -238,13 +302,54 @@ def manage_orphans(request):
     if not request.user.is_superuser:
         return redirect('index')
     
+    pending_orphans = Orphan.objects.filter(sponsorship_status='Pending').order_by('-created_at')
+    
+    approved_orphans = Orphan.objects.exclude(sponsorship_status='Pending').order_by('-created_at')
+    
     search_query = request.GET.get('q')
     if search_query:
-        orphans = Orphan.objects.filter(name__icontains=search_query).order_by('-created_at')
-    else:
-        orphans = Orphan.objects.all().order_by('-created_at')
+        pending_orphans = pending_orphans.filter(name__icontains=search_query)
+        approved_orphans = approved_orphans.filter(name__icontains=search_query)
         
-    return render(request, 'Admin-dashboard/Orphanage.html', {'orphans': orphans})
+    return render(request, 'Admin-dashboard/Orphanage.html', {
+        'pending_orphans': pending_orphans,
+        'approved_orphans': approved_orphans
+    })
+
+@login_required(login_url='index')
+def approve_orphan_request(request, orphan_id):
+    if not request.user.is_superuser or request.method != 'POST':
+        return redirect('manage_orphans')
+    
+    orphan = get_object_or_404(Orphan, id=orphan_id)
+    
+    orphan.sponsorship_status = 'Available'
+    orphan.save()
+    
+    if orphan.guardian:
+        orphan.guardian.is_approved = True
+        orphan.guardian.save()
+        
+    messages.success(request, f'تم اعتماد اليتيم {orphan.name} بنجاح، وهو الآن متاح للمتبرعين.')
+    return redirect('manage_orphans')
+
+@login_required(login_url='index')
+def reject_orphan_request(request, orphan_id):
+    if not request.user.is_superuser or request.method != 'POST':
+        return redirect('manage_orphans')
+        
+    orphan = get_object_or_404(Orphan, id=orphan_id)
+    guardian = orphan.guardian
+    
+    orphan.delete()
+    
+    if guardian and guardian.orphans.count() == 0:
+        user = guardian.user
+        guardian.delete()
+        user.delete()
+        
+    messages.success(request, 'تم رفض الطلب وحذفه من النظام بنجاح.')
+    return redirect('manage_orphans')
 
 def add_orphan(request):
     if request.method == 'POST':
@@ -297,6 +402,7 @@ def admin_orphan_details(request, orphan_id):
         return redirect('index')
     
     orphan = get_object_or_404(Orphan, id=orphan_id)
+    guardian = orphan.guardian 
     documents = orphan.documents.all()
     sponsorships = orphan.sponsorships.all()
     upload_error = None
@@ -309,18 +415,29 @@ def admin_orphan_details(request, orphan_id):
             orphan.social_status = request.POST.get('social_status', orphan.social_status)
             orphan.health_status = request.POST.get('health_status', orphan.health_status)
             orphan.save()
+
+            if guardian:
+                guardian.name = request.POST.get('guardian_name', guardian.name)
+                guardian.id_number = request.POST.get('guardian_id', guardian.id_number)
+                guardian.phone = request.POST.get('guardian_phone', guardian.phone)
+                guardian.payout_method = request.POST.get('payout_method', guardian.payout_method)
+                guardian.payout_details = request.POST.get('payout_details', guardian.payout_details)
+                guardian.save()
+                guardian.user.email = request.POST.get('guardian_email', guardian.user.email)
+                guardian.user.save()
+            messages.success(request, 'تم تحديث البيانات بنجاح.')
             return redirect('admin_orphan_details', orphan_id=orphan.id)
         
         elif 'upload_document' in request.POST:
             uploaded_file = request.FILES.get('document_file')
             if not uploaded_file:
-                upload_error = "No file uploaded."
+                upload_error = "لم يتم رفع أي ملف."
             else:
                 try:
                     _save_document_for_orphan(
                         orphan,
                         uploaded_file,
-                        request.POST.get('document_title', 'Untitled Document'),
+                        request.POST.get('document_title', 'وثيقة بدون عنوان'),
                         request.POST.get('document_desc', ''),
                     )
                 except ValidationError as exc:
@@ -330,6 +447,7 @@ def admin_orphan_details(request, orphan_id):
             
     context = {
         'orphan': orphan,
+        'guardian': guardian, 
         'documents': documents,
         'sponsorships': sponsorships,
         'upload_error': upload_error,
@@ -433,30 +551,52 @@ def create_stripe_checkout_session(request, payment_id):
         donor = Donor.objects.get(email=request.user.email)
         payment = get_object_or_404(Payment, id=payment_id, sponsorship__donor=donor)
         
-        amount_in_cents = int(payment.amount * 100)
+        donation_amount_cents = int(payment.amount * 100)
+        platform_fee_cents = int(donation_amount_cents * 0.01) 
         
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': f'كفالة اليتيم: {payment.sponsorship.orphan.name}',
-                        'description': 'دفعة كفالة دورية',
+            line_items=[
+                {
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': f'كفالة اليتيم: {payment.sponsorship.orphan.name}',
+                            'description': 'المبلغ الصافي الذي يصل لليتيم بالكامل',
+                        },
+                        'unit_amount': donation_amount_cents,
                     },
-                    'unit_amount': amount_in_cents,
+                    'quantity': 1,
                 },
-                'quantity': 1,
-            }],
+                {
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'رسوم تشغيل المنصة (1%)',
+                            'description': 'مساهمة لتغطية تكاليف الخوادم وبوابات الدفع الإلكتروني',
+                        },
+                        'unit_amount': platform_fee_cents,
+                    },
+                    'quantity': 1,
+                }
+            ],
             mode='payment',
-            client_reference_id=payment.id, 
-            
+            client_reference_id=str(payment.pk), 
             success_url=request.build_absolute_uri(reverse('donor_payments')) + '?success=true',
-            cancel_url=request.build_absolute_uri(reverse('pay_checkout', args=[payment.id])) + '?canceled=true',
+            # استخدام pk بدلاً من id
+            cancel_url=request.build_absolute_uri(reverse('pay_checkout', args=[payment.pk])) + '?canceled=true',
         )
-        return redirect(checkout_session.url)
         
+        # التأكد من وجود الرابط لإرضاء Pylance ومنع أي أخطاء مفاجئة
+        if checkout_session.url:
+            return redirect(checkout_session.url)
+        else:
+            messages.error(request, "لم نتمكن من إنشاء جلسة الدفع، يرجى المحاولة مرة أخرى.")
+            return redirect('donor_payments')
+            
     except Exception as e:
+        print(f"STRIPE ERROR: {str(e)}")
+        messages.error(request, "حدث خطأ أثناء الاتصال ببوابة الدفع. يرجى المحاولة لاحقاً.")
         return redirect('donor_payments')
 
 @login_required(login_url='index')
@@ -581,15 +721,15 @@ def orphan_dashboard(request):
     return render(request, 'Orphan-dashboard/dashboard.html', context)
 
 @login_required(login_url='index')
-def orphan_details(request):
-    try:
-        orphan = Orphan.objects.get(username=request.user.username)
-        unread_count = Notification.objects.filter(orphan=orphan, is_read=False).count()
-        recent_notifications = Notification.objects.filter(orphan=orphan).order_by('-created_at')[:5]
-    except Orphan.DoesNotExist:
-        orphan, unread_count, recent_notifications = None, 0, []
-        
-    return render(request, 'Orphan-dashboard/detailedOrphan.html', {'orphan': orphan, 'unread_count': unread_count, 'recent_notifications': recent_notifications})
+def orphan_profile(request):
+    orphan = get_object_or_404(Orphan, username=request.user.username)
+    guardian = orphan.guardian 
+    
+    context = {
+        'orphan': orphan,
+        'guardian': guardian,
+    }
+    return render(request, 'Orphan-dashboard/detailesOrphan.html', context)
 
 @login_required(login_url='index')
 def orphan_documents(request):
@@ -660,52 +800,37 @@ def orphan_notifications(request):
 
 @login_required(login_url='index')
 def orphan_edit_profile(request):
-    try:
-        orphan = Orphan.objects.get(username=request.user.username)
-        unread_count = Notification.objects.filter(orphan=orphan, is_read=False).count()
-        recent_notifications = Notification.objects.filter(orphan=orphan).order_by('-created_at')[:5]
-    except Orphan.DoesNotExist:
-        orphan, unread_count, recent_notifications = None, 0, []
-        return redirect('index') 
-        
+    orphan = get_object_or_404(Orphan, username=request.user.username)
+    guardian = orphan.guardian
+    
     if request.method == 'POST':
-        new_email = request.POST.get('email')
-        if new_email:
-            request.user.email = new_email
-            request.user.save()
-
-        new_contact_email = request.POST.get('contact_email')
-        if new_contact_email:
-            orphan.contact_email = new_contact_email
-        
-        age_val = request.POST.get('age')
-        if age_val and age_val.isdigit():
-            orphan.age = int(age_val)
-            
+        orphan.age = request.POST.get('age', orphan.age)
         orphan.gender = request.POST.get('gender', orphan.gender)
+        orphan.health_status = request.POST.get('health_status', orphan.health_status)
         orphan.area = request.POST.get('area', orphan.area)
         orphan.social_status = request.POST.get('social_status', orphan.social_status)
-        orphan.health_status = request.POST.get('health_status', orphan.health_status)
-        orphan.health_details = request.POST.get('health_details', orphan.health_details)
-        orphan.guardian_name = request.POST.get('guardian_name', orphan.guardian_name)
-        orphan.phone = request.POST.get('phone', orphan.phone)
-
+        
         if 'profile_image' in request.FILES:
             orphan.image = request.FILES['profile_image']
-
+            
         orphan.save()
-        return redirect('orphan_details')
+
+        if guardian:
+            guardian.phone = request.POST.get('guardian_phone', guardian.phone)
+            guardian.payout_method = request.POST.get('payout_method', guardian.payout_method)
+            guardian.payout_details = request.POST.get('payout_details', guardian.payout_details)
+            guardian.save()
+            request.user.email = request.POST.get('guardian_email', request.user.email)
+            request.user.save()
+
+        messages.success(request, 'تم حفظ التعديلات بنجاح.')
+        return redirect('orphan_edit_profile') 
 
     context = {
-        'orphan': orphan, 
-        'unread_count': unread_count, 
-        'recent_notifications': recent_notifications,
-        'is_male': orphan.gender == 'Male' if orphan else False,
-        'is_female': orphan.gender == 'Female' if orphan else False,
-        'health_excellent': orphan.health_status == 'ممتازة' if orphan else False,
-        'health_good': orphan.health_status == 'جيدة' if orphan else False,
-        'health_sick': orphan.health_status == 'مريض' if orphan else False,
-        'health_special': orphan.health_status == 'ذوي احتياجات خاصة' if orphan else False,
+        'orphan': orphan,
+        'guardian': guardian,
+        'is_male': orphan.gender == 'Male',
+        'is_female': orphan.gender == 'Female',
     }
     return render(request, 'Orphan-dashboard/editProfile.html', context)
 

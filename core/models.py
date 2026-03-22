@@ -23,6 +23,28 @@ def validate_document_file(upload):
     if content_type and content_type not in ALLOWED_DOCUMENT_MIME_TYPES:
         raise ValidationError("Unsupported file type.")
 
+class Guardian(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    
+    name = models.CharField(max_length=150, verbose_name="اسم الوصي الرباعي")
+    id_number = models.CharField(max_length=20, unique=True, verbose_name="رقم الهوية")
+    phone = models.CharField(max_length=20, verbose_name="رقم الهاتف")
+    relation_to_orphan = models.CharField(max_length=50, verbose_name="صلة القرابة (مثال: أم، عم، جد)")
+    
+    legal_document = models.FileField(upload_to='guardian_docs/', verbose_name="مستند الوصاية")
+    
+    PAYOUT_CHOICES = [
+        ('Bank', 'حوالة بنكية'),
+        ('Wallet', 'محفظة إلكترونية (مثل Jawwal Pay)'),
+        ('Cash', 'استلام نقدي باليد'),
+    ]
+    payout_method = models.CharField(max_length=20, choices=PAYOUT_CHOICES, default='Cash', verbose_name="طريقة استلام الكفالة")
+    payout_details = models.CharField(max_length=255, blank=True, null=True, verbose_name="رقم الحساب أو رقم المحفظة")
+    
+    is_approved = models.BooleanField(default=False, verbose_name="تم التحقق من الوصي")
+
+    def __str__(self):
+        return self.name
 
 class Orphan(models.Model):
     GENDER_CHOICES = [
@@ -58,6 +80,15 @@ class Orphan(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    guardian = models.ForeignKey(Guardian, on_delete=models.CASCADE, related_name='orphans', null=True, blank=True)
+    
+    STATUS_CHOICES = [
+        ('Pending', 'قيد مراجعة الإدارة'),
+        ('Available', 'متاح للكفالة'),
+        ('Sponsored', 'مكفول'),
+    ]
+    sponsorship_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
 
     def __str__(self):
         return self.name

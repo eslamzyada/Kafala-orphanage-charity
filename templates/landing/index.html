@@ -603,118 +603,9 @@
         </div>
     </footer>
 
-    <div id="myModalRegister" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="closee"
-                onclick="document.getElementById('myModalRegister').style.display='none'">&times;</span>
-            <h2 class="title-modal text-center">إنشاء حساب جديد</h2>
-            <div class="text-center mb-4">
-                <img src="{% static 'img/loho.png' %}" alt="" width="90" height="90" />
-            </div>
 
-            <form method="POST" action="{% url 'register_view' %}" enctype="multipart/form-data" novalidate>
-                {% csrf_token %}
+    {% include 'landing/_modals.html' %}
 
-                <select id="userType" name="user_type" onchange="toggleFields()">
-                    <option value="sponsor" selected>كفيل (متبرع)</option>
-                    <option value="supported">يتيم (مستفيد)</option>
-                </select>
-
-                <div id="sponsorFields">
-                    <input dir="ltr" class="user-inputs" type="text" name="sponsor_username"
-                        placeholder="اسم المستخدم (للدخول للنظام)" />
-                    <input dir="rtl" class="user-inputs" type="text" name="sponsor_name"
-                        placeholder="الاسم الكامل (أو اسم المؤسسة)" />
-                    <input dir="ltr" class="user-inputs" type="email" name="sponsor_email"
-                        placeholder="البريد الإلكتروني" />
-                    <input dir="ltr" class="user-inputs" type="password" name="sponsor_password"
-                        placeholder="كلمة المرور" />
-                </div>
-
-                <div id="supportedFields" class="fields" style="display: none;">
-                    <input dir="ltr" class="user-inputs" type="text" name="orphan_username"
-                        placeholder="اسم المستخدم (للدخول للنظام)" />
-                    <input dir="ltr" class="user-inputs" type="password" name="orphan_password"
-                        placeholder="كلمة المرور" />
-
-                    <hr style="margin: 15px 0; border-color: #eee;">
-
-                    <input dir="rtl" class="user-inputs" type="text" name="orphan_name"
-                        placeholder="الاسم الرباعي (الاسم القانوني)" />
-                    <input dir="rtl" class="user-inputs" type="number" name="orphan_age" placeholder="العمر" />
-
-                    <select name="orphan_gender" class="user-inputs" dir="rtl">
-                        <option value="" disabled selected>اختر الجنس...</option>
-                        <option value="Male">ذكر</option>
-                        <option value="Female">أنثى</option>
-                    </select>
-
-                    <input dir="rtl" class="user-inputs" type="text" name="orphan_area" placeholder="المنطقة السكنية" />
-                    <input dir="rtl" class="user-inputs" type="text" name="orphan_social"
-                        placeholder="الحالة الاجتماعية" />
-
-                    <select name="orphan_health" class="user-inputs" dir="rtl">
-                        <option value="" disabled selected>اختر الحالة الصحية...</option>
-                        <option value="ممتازة">ممتازة</option>
-                        <option value="جيدة">جيدة</option>
-                        <option value="مريض">مريض</option>
-                        <option value="ذوي احتياجات خاصة">ذوي احتياجات خاصة</option>
-                    </select>
-
-                    <div class="upload-container"
-                        style="background: #f8f9fa; border: 1px dashed #ccc; padding: 15px; border-radius: 8px; text-align: center; cursor: pointer; margin-top: 10px;">
-                        <label for="file-input-orphan" class="file-label"
-                            style="cursor: pointer; color: var(--primary-color); font-weight: 700;">
-                            <i class="fas fa-camera" style="margin-left: 5px;"></i> رفع صورة شخصية
-                        </label>
-                        <input type="file" id="file-input-orphan" name="orphan_photo" accept="image/*"
-                            style="display: none;" />
-                    </div>
-                </div>
-
-                <button type="submit" class="login-btn">إنشاء حساب</button>
-            </form>
-            <p class="link-sign" style="text-align: center; margin-top: 20px; font-size: 0.95rem;">
-                هل تمتلك حساب ؟
-                <span style="color: var(--accent-color); font-weight: 800; cursor: pointer;"
-                    onclick="document.getElementById('myModalRegister').style.display='none'; document.getElementById('myModal').style.display='block';">
-                    تسجيل دخول
-                </span>
-            </p>
-        </div>
-    </div>
-
-    <div id="myModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close" onclick="document.getElementById('myModal').style.display='none'">&times;</span>
-            <h2 class="title-modal text-center">تسجيل الدخول</h2>
-            <div class="text-center mb-4">
-                <img src="{% static 'img/loho.png' %}" alt="" width="90" height="90" />
-            </div>
-
-            <form method="POST" action="{% url 'login_view' %}" novalidate>
-                {% csrf_token %}
-                <input dir="ltr" class="user-inputs" type="text" name="username" placeholder="اسم المستخدم" />
-                <input dir="ltr" class="user-inputs" type="password" name="password" placeholder="كلمة المرور" />
-
-                <div class="divFor" style="text-align: right; margin-bottom: 15px;">
-                    <a class="forgotpass" href="#"
-                        style="color: var(--light-text); font-size: 0.9rem; text-decoration: none;">هل نسيت كلمة المرور
-                        ؟</a>
-                </div>
-
-                <button type="submit" class="login-btn">تسجيل الدخول</button>
-            </form>
-
-            <p class="link-sign" style="text-align: center; margin-top: 20px; font-size: 0.95rem;">
-                لا تمتلك حساباً ؟
-                <span style="color: var(--accent-color); font-weight: 800; cursor: pointer;"
-                    onclick="document.getElementById('myModal').style.display='none'; document.getElementById('myModalRegister').style.display='block';">
-                    إنشاء حساب
-                </span>
-            </p>
-        </div>
-    </div>
 
     <script src="{% static 'js/bootstrap.bundle.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
@@ -722,19 +613,6 @@
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
     <script>
         AOS.init();
-
-        // Dropdown toggle logic
-        function toggleFields() {
-            var userType = document.getElementById("userType").value;
-            if (userType === "sponsor") {
-                document.getElementById("sponsorFields").style.display = "block";
-                document.getElementById("supportedFields").style.display = "none";
-            } else {
-                document.getElementById("sponsorFields").style.display = "none";
-                document.getElementById("supportedFields").style.display = "block";
-            }
-        }
-        document.getElementById("userType").addEventListener("change", toggleFields);
     </script>
 </body>
 

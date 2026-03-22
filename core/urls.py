@@ -29,7 +29,7 @@ urlpatterns = [
     path('sponsor/edit-profile/', views.donor_edit_profile, name='donor_edit_profile'),
 
     path('orphan-dashboard/', views.orphan_dashboard, name='orphan_dashboard'),
-    path('orphan/details/', views.orphan_details, name='orphan_details'),
+    path('orphan/details/', views.orphan_profile, name='orphan_details'),
     path('orphan/documents/', views.orphan_documents, name='orphan_documents'),
     path('orphan/sponsorships/', views.orphan_sponsorships, name='orphan_sponsorships'),
     path('orphan/notifications/', views.orphan_notifications, name='orphan_notifications'),
@@ -52,4 +52,6 @@ urlpatterns = [
     path('sponsor-dashboard/notifications/mark-all-read/', views.mark_all_donor_notifications_read, name='mark_all_donor_notifications_read'),
     path('donor-dashboard/payment/<int:payment_id>/stripe/', views.create_stripe_checkout_session, name='create_stripe_checkout_session'),
     path('api/ai-assistant/', views.kafala_ai_assistant, name='kafala_ai_assistant'),
+    path('admin-dashboard/orphans/approve/<int:orphan_id>/', views.approve_orphan_request, name='approve_orphan_request'),
+    path('admin-dashboard/orphans/reject/<int:orphan_id>/', views.reject_orphan_request, name='reject_orphan_request'),
     ]

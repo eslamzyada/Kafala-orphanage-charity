@@ -1,138 +1,131 @@
 {% extends 'Orphan-dashboard/base.html' %}
 {% load static %}
 
-{% block title %}بيانات اليتيم{% endblock %}
+{% block title %}بيانات اليتيم والوصي{% endblock %}
 
 {% block content %}
-<div class="main-content">
+<div class="main-content container mt-4 mb-5">
     <div class="title-content mb-4">
         <h3 class="document-title"
-            style="color: #333; font-weight: bold; border-bottom: 2px solid #006dff; display: inline-block; padding-bottom: 5px;">
-            البيانات الشخصية والتفاصيل
+            style="color: var(--primary-color); font-weight: 800; border-bottom: 3px solid var(--accent-color); display: inline-block; padding-bottom: 8px;">
+            <i class="fas fa-id-card ms-2"></i> البيانات الشخصية والتفاصيل
         </h3>
     </div>
 
-    <div class="row mt-4" style="display: flex; flex-wrap: wrap; gap: 20px;">
+    <div class="row mt-4" style="display: flex; flex-wrap: wrap; gap: 25px; direction: rtl;">
 
         <div class="profile-card text-center"
-            style="flex: 1; min-width: 250px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+            style="flex: 1; min-width: 280px; background: white; padding: 40px 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.04); border: 1px solid #f0f0f0;">
 
             {% if orphan.image %}
             <img src="{{ orphan.image.url }}" alt="صورة {{ orphan.name }}"
-                style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #f0f7ff; margin-bottom: 15px;">
+                style="width: 160px; height: 160px; border-radius: 50%; object-fit: cover; border: 5px solid #f8f9fa; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
             {% else %}
-            <img src="{% static 'img/Screenshot 2025-05-17 082043.png' %}" alt="صورة افتراضية"
-                style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #f0f7ff; margin-bottom: 15px;">
+            <img src="{% static 'img/Circle.png' %}" alt="صورة افتراضية"
+                style="width: 160px; height: 160px; border-radius: 50%; object-fit: cover; border: 5px solid #f8f9fa; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
             {% endif %}
 
-            <h4 style="color: #333; font-weight: bold;">{{ orphan.name }}</h4>
+            <h4 style="color: #222; font-weight: 800; margin-bottom: 5px;">{{ orphan.name }}</h4>
 
-            <p style="color: gray; margin-bottom: 15px;">
-                {% if orphan.social_status %}
-                {{ orphan.social_status }}
-                {% else %}
-                يتيم
-                {% endif %}
+            <p style="color: #777; margin-bottom: 20px; font-weight: bold; font-size: 1.1rem;">
+                {{ orphan.social_status|default:"يتيم" }}
             </p>
 
-            <span
-                style="background-color: {% if orphan.sponsorship_status == 'Sponsored' %}#68af73{% else %}#ffb822{% endif %}; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; font-weight: bold;">
+            <div style="margin-top: 10px;">
                 {% if orphan.sponsorship_status == 'Sponsored' %}
-                <i class="fas fa-check-circle"></i> مكفول
+                    <span style="background-color: #68af73; color: white; padding: 10px 20px; border-radius: 30px; font-size: 1rem; font-weight: bold; display: inline-block;">
+                        <i class="fas fa-check-circle ms-1"></i> مكفول
+                    </span>
+                {% elif orphan.sponsorship_status == 'Available' %}
+                    <span style="background-color: #006dff; color: white; padding: 10px 20px; border-radius: 30px; font-size: 1rem; font-weight: bold; display: inline-block;">
+                        <i class="fas fa-globe ms-1"></i> متاح للكفالة بالمنصة
+                    </span>
                 {% else %}
-                <i class="fas fa-clock"></i> متاح للكفالة
+                    <span style="background-color: #D69E2E; color: white; padding: 10px 20px; border-radius: 30px; font-size: 1rem; font-weight: bold; display: inline-block;">
+                        <i class="fas fa-lock ms-1"></i> قيد المراجعة والتدقيق
+                    </span>
                 {% endif %}
-            </span>
+            </div>
         </div>
 
         <div class="data-card"
-            style="flex: 2; min-width: 300px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
-            <h5 style="color: #006dff; margin-bottom: 25px; font-weight: bold;">
-                <i class="fas fa-info-circle"></i> المعلومات الأساسية
+            style="flex: 2; min-width: 320px; background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.04); border: 1px solid #f0f0f0;">
+            
+            <h5 style="color: var(--primary-color); margin-bottom: 25px; font-weight: 800;">
+                <i class="fas fa-child ms-2"></i> بيانات اليتيم
             </h5>
 
-            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-                <div style="width: 40%; color: #777; font-weight: bold;">الاسم الرباعي:</div>
-                <div style="width: 60%; color: #333;">{{ orphan.name }}</div>
+            <div style="display: flex; border-bottom: 1px dashed #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 35%; color: #777; font-weight: bold;">الاسم الرباعي:</div>
+                <div style="width: 65%; color: #222; font-weight: 800;">{{ orphan.name }}</div>
             </div>
 
-            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-                <div style="width: 40%; color: #777; font-weight: bold;">العمر:</div>
-                <div style="width: 60%; color: #333;">
-                    {% if orphan.age %}
-                    {{ orphan.age }} سنة
-                    {% else %}
-                    غير متوفر
+            <div style="display: flex; border-bottom: 1px dashed #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 35%; color: #777; font-weight: bold;">العمر:</div>
+                <div style="width: 65%; color: #222; font-weight: 800;">{{ orphan.age|default:"غير متوفر" }} سنة</div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px dashed #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 35%; color: #777; font-weight: bold;">الجنس:</div>
+                <div style="width: 65%; color: #222; font-weight: 800;">
+                    {% if orphan.gender == 'Male' %}ذكر{% elif orphan.gender == 'Female' %}أنثى{% else %}غير متوفر{% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px dashed #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 35%; color: #777; font-weight: bold;">المنطقة السكنية:</div>
+                <div style="width: 65%; color: #222; font-weight: 800;">{{ orphan.area|default:"غير متوفر" }}</div>
+            </div>
+
+            <div style="display: flex; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 25px;">
+                <div style="width: 35%; color: #777; font-weight: bold;">الحالة الصحية:</div>
+                <div style="width: 65%; color: #222; font-weight: 800;">{{ orphan.health_status|default:"غير متوفر" }}</div>
+            </div>
+
+            <h5 style="color: #006dff; margin-bottom: 25px; font-weight: 800;">
+                <i class="fas fa-user-shield ms-2"></i> بيانات الوصي والمالية
+            </h5>
+
+            {% if guardian %}
+            <div style="display: flex; border-bottom: 1px dashed #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 35%; color: #777; font-weight: bold;">اسم الوصي:</div>
+                <div style="width: 65%; color: #222; font-weight: 800;">{{ guardian.name }}</div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px dashed #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 35%; color: #777; font-weight: bold;">رقم التواصل:</div>
+                <div style="width: 65%; color: #006dff; font-weight: 800;" dir="ltr; text-align: right;">{{ guardian.phone }}</div>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px dashed #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 35%; color: #777; font-weight: bold;">طريقة استلام الكفالة:</div>
+                <div style="width: 65%; color: #222; font-weight: 800;">
+                    {% if guardian.payout_method == 'Bank' %}حوالة بنكية
+                    {% elif guardian.payout_method == 'Wallet' %}محفظة إلكترونية
+                    {% elif guardian.payout_method == 'Cash' %}استلام نقدي
+                    {% else %}{{ guardian.payout_method }}
                     {% endif %}
                 </div>
             </div>
 
-            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-                <div style="width: 40%; color: #777; font-weight: bold;">الجنس:</div>
-                <div style="width: 60%; color: #333;">
-                    {% if orphan.gender == 'Male' %}
-                    ذكر
-                    {% elif orphan.gender == 'Female' %}
-                    أنثى
-                    {% else %}
-                    غير متوفر
-                    {% endif %}
+            <div style="display: flex; border-bottom: 1px dashed #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="width: 35%; color: #777; font-weight: bold;">رقم الحساب / المحفظة:</div>
+                <div style="width: 65%; color: var(--accent-color); font-weight: 800; font-family: monospace; font-size: 1.1rem;">
+                    {{ guardian.payout_details|default:"استلام نقدي (لا يوجد رقم)" }}
                 </div>
             </div>
+            {% else %}
+            <div class="alert alert-warning text-center" style="font-weight: bold;">لا توجد بيانات وصي مسجلة. يرجى تحديث البيانات.</div>
+            {% endif %}
 
-            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-                <div style="width: 40%; color: #777; font-weight: bold;">المنطقة السكنية:</div>
-                <div style="width: 60%; color: #333;">
-                    {% if orphan.area %}
-                    {{ orphan.area }}
-                    {% else %}
-                    غير متوفر
-                    {% endif %}
-                </div>
-            </div>
-
-            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-                <div style="width: 40%; color: #777; font-weight: bold;">تفاصيل الحالة الصحية:</div>
-                <div style="width: 60%; color: #333; line-height: 1.6;">
-                    {% if orphan.health_details %}
-                    {{ orphan.health_details }}
-                    {% else %}
-                    لا توجد تفاصيل إضافية مسجلة.
-                    {% endif %}
-                </div>
-            </div>
-
-            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-                <div style="width: 40%; color: #777; font-weight: bold;">اسم ولي الأمر / الوصي:</div>
-                <div style="width: 60%; color: #333;">
-                    {% if orphan.guardian_name %}
-                    {{ orphan.guardian_name }}
-                    {% else %}
-                    غير متوفر
-                    {% endif %}
-                </div>
-            </div>
-
-            <div style="display: flex; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-                <div style="width: 40%; color: #777; font-weight: bold;">رقم التواصل:</div>
-                <div style="width: 60%; color: #333;" dir="ltr">
-                    {% if orphan.phone %}
-                    {{ orphan.phone }}
-                    {% else %}
-                    غير متوفر
-                    {% endif %}
-                </div>
-            </div>
-
-            <div style="display: flex; margin-top: 25px; justify-content: flex-end;">
+            <div style="display: flex; margin-top: 35px; justify-content: flex-end;">
                 <a href="{% url 'orphan_edit_profile' %}"
-                    style="background-color: #006dff; color: white; padding: 10px 25px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.3s;">
-                    <i class="fas fa-edit"></i> تحديث البيانات
+                    style="background-color: var(--primary-color); color: #006dff; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 800; transition: 0.3s; box-shadow: 0 4px 10px rgba(42, 117, 107, 0.2);">
+                    <i class="fas fa-edit ms-1"></i> تحديث البيانات
                 </a>
             </div>
-        </div>
 
+        </div>
     </div>
 </div>
-{% endblock %}<option value="Male" {% if orphan.gender=='Male' %} selected {% endif %}>ذكر</option>
-<option value="Female" {% if orphan.gender=='Female' %} selected {% endif %}>أنثى</option>
+{% endblock %}

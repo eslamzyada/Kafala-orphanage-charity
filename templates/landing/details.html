@@ -618,170 +618,24 @@
         </div>
     </footer>
 
+    {% include 'landing/_modals.html' %}
+
+
     <button id="back-to-top" class="btn back-to-top" aria-label="العودة إلى الأعلى"
         style="position: fixed; bottom: 20px; right: 20px; border-radius: 50%; width: 50px; height: 50px; border: none; background: var(--secondary-color); color: white; font-size: 1.5rem; display: none; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
         <span>↑</span>
     </button>
 
-    <style>
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding-top: 60px;
-        }
 
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 30px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-        }
 
-        .closee,
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-right: -15px;
-            margin-top: -15px;
-        }
 
-        .closee:hover,
-        .close:hover {
-            color: black;
-        }
 
-        .title-modal {
-            text-align: center;
-            color: var(--dark-text);
-            font-weight: 800;
-            margin-bottom: 20px;
-        }
-    </style>
-
-    <div id="myModalRegister" class="modal">
-        <div class="modal-content">
-            <span class="closee">&times;</span>
-            <h2 class="title-modal">إنشاء حساب جديد!</h2>
-            <div class="text-center mb-3">
-                <img src="{% static 'img/loho.png' %}" alt="Kafala" width="80" height="80"
-                    style="display: block; margin: 0 auto;" />
-            </div>
-
-            <form method="POST" action="{% url 'register_view' %}" enctype="multipart/form-data">
-                {% csrf_token %}
-                <select id="userType" name="user_type">
-                    <option value="sponsor" selected>كفيل / متبرع</option>
-                    <option value="supported">يتيم / ولي أمر</option>
-                </select>
-
-                <div id="sponsorFields">
-                    <input class="user-inputs" type="text" name="username" placeholder="اسم المستخدم" required />
-                    <input class="user-inputs" type="email" name="email" placeholder="البريد الإلكتروني" required />
-                    <input class="user-inputs" type="password" name="password" placeholder="كلمة المرور" required />
-                </div>
-
-                <div id="supportedFields" style="display: none;">
-                    <p style="color: var(--light-text); font-size: 0.85rem; margin-bottom: 10px; text-align: center;">
-                        يرجى تزويدنا بالبيانات الأساسية ليتم مراجعتها من قِبل الإدارة.</p>
-                    <input class="user-inputs" type="text" name="orphan_name" placeholder="اسم اليتيم" />
-                    <input class="user-inputs" type="number" name="orphan_age" placeholder="العمر" />
-                    <input class="user-inputs" type="text" name="orphan_gender" placeholder="الجنس (ذكر/أنثى)" />
-                    <input class="user-inputs" type="text" name="orphan_area" placeholder="المنطقة السكنية" />
-                    <input class="user-inputs" type="text" name="orphan_social" placeholder="الحالة الاجتماعية" />
-                    <input class="user-inputs" type="text" name="orphan_health" placeholder="الحالة الصحية" />
-                </div>
-
-                <button type="submit" class="btn-sign" style="width: 100%; margin-top: 10px;">إنشاء حساب</button>
-            </form>
-            <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
-                لديك حساب بالفعل؟
-                <span style="color: var(--primary-color); font-weight: 700; cursor: pointer;"
-                    onclick="switchToLogin()">تسجيل دخول</span>
-            </p>
-        </div>
-    </div>
-
-    <div id="myModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2 class="title-modal">تسجيل الدخول!</h2>
-            <div class="text-center mb-3">
-                <img src="{% static 'img/loho.png' %}" alt="Kafala" width="80" height="80"
-                    style="display: block; margin: 0 auto;" />
-            </div>
-
-            <form method="POST" action="{% url 'login_view' %}">
-                {% csrf_token %}
-                <input class="user-inputs" type="text" name="username" placeholder="اسم المستخدم" required />
-                <input class="user-inputs" type="password" name="password" placeholder="كلمة المرور" required />
-
-                <div style="text-align: left; margin-bottom: 10px;">
-                    <a href="#" style="color: var(--light-text); font-size: 0.8rem; text-decoration: none;">هل نسيت كلمة
-                        المرور؟</a>
-                </div>
-
-                <button type="submit" class="btn-log"
-                    style="width: 100%; background: var(--primary-color); color: white;">دخول</button>
-            </form>
-            <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
-                لا تمتلك حساباً؟
-                <span style="color: var(--primary-color); font-weight: 700; cursor: pointer;"
-                    onclick="switchToRegister()">إنشاء حساب جديد</span>
-            </p>
-        </div>
-    </div>
 
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
     <script>
-        AOS.init({ duration: 1000, once: true }); // تم تفعيل الأنميشن مرة واحدة فقط عند التحميل
-    </script>
+        AOS.init({ duration: 1000, once: true });
 
-    <script>
-        // منطق الـ Modals والتنقل بينها
-        const loginModal = document.getElementById("myModal");
-        const registerModal = document.getElementById("myModalRegister");
-        const closeLogin = document.querySelector("#myModal .close");
-        const closeRegister = document.querySelector("#myModalRegister .closee");
-
-        if (closeLogin) closeLogin.onclick = () => loginModal.style.display = "none";
-        if (closeRegister) closeRegister.onclick = () => registerModal.style.display = "none";
-
-        window.onclick = (event) => {
-            if (event.target == loginModal) loginModal.style.display = "none";
-            if (event.target == registerModal) registerModal.style.display = "none";
-        }
-
-        function switchToLogin() { registerModal.style.display = "none"; loginModal.style.display = "block"; }
-        function switchToRegister() { loginModal.style.display = "none"; registerModal.style.display = "block"; }
-
-        // منطق تبديل حقول التسجيل بناءً على نوع المستخدم
-        const userTypeSelect = document.getElementById('userType');
-        const sponsorFields = document.getElementById('sponsorFields');
-        const supportedFields = document.getElementById('supportedFields');
-
-        userTypeSelect.addEventListener('change', function () {
-            if (this.value === 'supported') {
-                supportedFields.style.display = 'block';
-            } else {
-                supportedFields.style.display = 'none';
-            }
-        });
-
-        // زر العودة للأعلى
         const backToTopBtn = document.getElementById("back-to-top");
         window.onscroll = function () {
             if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {

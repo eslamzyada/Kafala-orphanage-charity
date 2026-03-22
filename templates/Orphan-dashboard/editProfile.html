@@ -6,7 +6,14 @@
 {% block content %}
 <div class="main-edit">
     <div class="inner-edit container">
-        <p class="edit-title"> تعديل ملفي الشخصي</p>
+        <p class="edit-title" style="color: var(--primary-color); font-weight: 800; border-bottom: 2px solid #eee; padding-bottom: 10px;"> تعديل ملفي الشخصي</p>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success text-center" style="font-weight: bold; border-radius: 8px;">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
 
@@ -23,84 +30,90 @@
             </div>
 
             <div class="edit-inputs">
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div style="flex: 1;">
+                
+                <h5 style="color: #666; font-weight: bold; margin-top: 20px; margin-bottom: 15px;"><i class="fas fa-child"></i> بيانات اليتيم</h5>
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
                         <label>الاسم الكامل (غير قابل للتعديل)</label>
                         <input type="text" class="form-control" value="{{ orphan.name }}" disabled>
                     </div>
-                    <div style="flex: 1;">
+                    <div style="flex: 1; min-width: 250px;">
                         <label>العمر</label>
-                        <input type="number" name="age" class="form-control"
-                            value="{% if orphan.age %}{{ orphan.age }}{% endif %}" min="0" max="18">
+                        <input type="number" name="age" class="form-control" value="{% if orphan.age %}{{ orphan.age }}{% endif %}" min="0" max="18" required>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div style="flex: 1;">
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
                         <label>الجنس</label>
-                        <select name="gender" class="form-control">
+                        <select name="gender" class="form-control" required>
                             <option value="Male" {% if is_male %} selected {% endif %}>ذكر</option>
                             <option value="Female" {% if is_female %} selected {% endif %}>أنثى</option>
                         </select>
                     </div>
-                    <div style="flex: 1;">
+                    <div style="flex: 1; min-width: 250px;">
                         <label>الحالة الصحية العامة</label>
-                        <select name="health_status" class="form-control">
-                            <option value="ممتازة" {% if health_excellent %} selected {% endif %}>ممتازة</option>
-                            <option value="جيدة" {% if health_good %} selected {% endif %}>جيدة</option>
-                            <option value="مريض" {% if health_sick %} selected {% endif %}>مريض</option>
-                            <option value="ذوي احتياجات خاصة" {% if health_special %} selected {% endif %}>ذوي احتياجات
-                                خاصة</option>
+                        <select name="health_status" class="form-control" required>
+                            <option value="ممتازة" {% if orphan.health_status == 'ممتازة' %} selected {% endif %}>ممتازة</option>
+                            <option value="جيدة" {% if orphan.health_status == 'جيدة' %} selected {% endif %}>جيدة</option>
+                            <option value="مريض" {% if orphan.health_status == 'مريض' %} selected {% endif %}>مريض</option>
+                            <option value="ذوي احتياجات خاصة" {% if orphan.health_status == 'ذوي احتياجات خاصة' %} selected {% endif %}>ذوي احتياجات خاصة</option>
                         </select>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div style="flex: 1;">
+                <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
                         <label>المنطقة السكنية</label>
-                        <input type="text" name="area" class="form-control"
-                            value="{% if orphan.area %}{{ orphan.area }}{% endif %}">
+                        <input type="text" name="area" class="form-control" value="{% if orphan.area %}{{ orphan.area }}{% endif %}" required>
                     </div>
-                    <div style="flex: 1;">
+                    <div style="flex: 1; min-width: 250px;">
                         <label>الحالة الاجتماعية</label>
-                        <input type="text" name="social_status" class="form-control"
-                            value="{% if orphan.social_status %}{{ orphan.social_status }}{% endif %}">
+                        <select name="social_status" class="form-control" required>
+                            <option value="يتيم الأب" {% if orphan.social_status == 'يتيم الأب' %}selected{% endif %}>يتيم الأب </option>
+                            <option value="يتيم لأبوين" {% if orphan.social_status == 'يتيم لأبوين' %}selected{% endif %}>يتيم لأبوين</option>
+                        </select>
                     </div>
                 </div>
 
-                <div style="margin-bottom: 15px;">
-                    <label>تفاصيل الحالة الصحية (إن وجدت)</label>
-                    <textarea name="health_details" class="form-control" rows="2"
-                        placeholder="اكتب تفاصيل الحالة الصحية هنا...">{% if orphan.health_details %}{{ orphan.health_details }}{% endif %}</textarea>
-                </div>
-
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div style="flex: 1;">
-                        <label>اسم ولي الأمر / الوصي</label>
-                        <input type="text" name="guardian_name" class="form-control"
-                            value="{% if orphan.guardian_name %}{{ orphan.guardian_name }}{% endif %}">
+                {% if guardian %}
+                <h5 style="color: #666; font-weight: bold; margin-top: 30px; margin-bottom: 15px; border-top: 1px dashed #ccc; padding-top: 20px;"><i class="fas fa-user-shield"></i> بيانات الوصي والمالية</h5>
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <label>اسم ولي الأمر / الوصي (للتعديل يرجى مراجعة الإدارة)</label>
+                        <input type="text" class="form-control" value="{{ guardian.name }}" disabled>
                     </div>
-                    <div style="flex: 1;">
-                        <label>رقم التواصل</label>
-                        <input type="tel" name="phone" class="form-control"
-                            value="{% if orphan.phone %}{{ orphan.phone }}{% endif %}" dir="ltr">
+                    <div style="flex: 1; min-width: 250px;">
+                        <label>رقم هاتف الوصي للتواصل</label>
+                        <input type="tel" name="guardian_phone" class="form-control" value="{{ guardian.phone }}" dir="ltr" required>
                     </div>
                 </div>
-
-                <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-                    <div style="flex: 1;">
-                        <label>البريد الالكتروني للحساب</label>
-                        <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
-                    </div>
-                    <div style="flex: 1;">
-                        <label>بريد التواصل إن وجد</label>
-                        <input type="email" name="contact_email" class="form-control"
-                            value="{% if orphan.contact_email %}{{ orphan.contact_email }}{% endif %}">
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <label>البريد الإلكتروني للتواصل</label>
+                        <input type="email" name="guardian_email" class="form-control" value="{{ user.email }}" dir="ltr" required>
                     </div>
                 </div>
 
-                <button type="submit" class="form-control btn btn-primary" style="font-weight: bold;">حفظ
-                    التعديلات</button>
+                <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <label>طريقة استلام الكفالة المريحة لك</label>
+                        <select name="payout_method" class="form-control" required>
+                            <option value="Bank" {% if guardian.payout_method == 'Bank' %}selected{% endif %}>حوالة بنكية</option>
+                            <option value="Wallet" {% if guardian.payout_method == 'Wallet' %}selected{% endif %}>محفظة إلكترونية</option>
+                            <option value="Cash" {% if guardian.payout_method == 'Cash' %}selected{% endif %}>استلام نقدي باليد</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 250px;">
+                        <label>رقم الحساب البنكي أو المحفظة (إن وجد)</label>
+                        <input type="text" name="payout_details" class="form-control" value="{{ guardian.payout_details|default:'' }}" dir="ltr">
+                    </div>
+                </div>
+                {% endif %}
+
+                <button type="submit" class="form-control btn btn-primary" style="font-weight: bold; background-color: var(--primary-color); border: none; padding: 12px; margin-top: 10px;">حفظ التعديلات</button>
             </div>
         </form>
     </div>

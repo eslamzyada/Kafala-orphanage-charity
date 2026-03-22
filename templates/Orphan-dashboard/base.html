@@ -138,60 +138,82 @@
                         </p>
 
                         <div class="profile-panel" id="profilePanel"
-                            style="display: none; position: absolute; top: 50px; left: 0; background: white; border: 1px solid #eee; border-radius: 8px; width: 250px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 15px;">
+                            style="display: none; position: absolute; top: 50px; left: 0; background: white; border: 1px solid #eee; border-radius: 16px; width: 280px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 20px; direction: rtl; text-align: right;">
+
                             <div class="profile-header"
-                                style="display: flex; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                                style="display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 15px;">
+
                                 {% if orphan.image %}
                                 <img src="{{ orphan.image.url }}" alt="صورة المستخدم"
-                                    style="border-radius: 50%; object-fit: cover; width: 50px; height: 50px; margin-left: 10px;">
+                                    style="border-radius: 50%; object-fit: cover; width: 55px; height: 55px; flex-shrink: 0; border: 2px solid #e6f3f1;">
                                 {% else %}
                                 <img src="{% static 'img/Circle.png' %}" alt="صورة افتراضية"
-                                    style="width: 50px; height: 50px; margin-left: 10px;">
+                                    style="width: 55px; height: 55px; flex-shrink: 0; border-radius: 50%; border: 2px solid #e6f3f1;">
                                 {% endif %}
-                                <div class="profile-info">
-                                    <h4 style="font-size: 16px; margin: 0; color: #333;"><span dir="ltr">{{ orphan.name
-                                            }}</span></h4>
-                                    <p style="font-size: 13px; margin: 0; color: #777;">
-                                        {% if orphan.social_status %}
-                                        {{ orphan.social_status }}
-                                        {% else %}
-                                        يتيم
-                                        {% endif %}
+
+                                <div class="profile-info" style="overflow: hidden;">
+                                    <h4
+                                        style="font-size: 15px; margin: 0 0 5px 0; color: #222; font-weight: 800; line-height: 1.4; white-space: normal;">
+                                        {{ orphan.name }}
+                                    </h4>
+                                    <p style="font-size: 13px; margin: 0; color: #D69E2E; font-weight: bold;">
+                                        {{ orphan.social_status|default:"يتيم" }}
                                     </p>
                                 </div>
                             </div>
 
-                            <div class="profile-details" style="font-size: 13px; color: #555; line-height: 2;">
-                                <p style="margin: 0;">
-                                    <i class="fas fa-envelope" style="width: 20px; color: #006dff;"></i>
-                                    <span dir="ltr">{{ user.email }}</span>
-                                </p>
-                                <p style="margin: 0;">
-                                    <i class="fas fa-phone" style="width: 20px; color: #006dff;"></i>
-                                    <span dir="ltr">
-                                        {% if orphan.phone %}
-                                        {{ orphan.phone }}
-                                        {% else %}
-                                        غير متوفر
-                                        {% endif %}
+                            <div class="profile-details"
+                                style="display: flex; flex-direction: column; gap: 12px; font-size: 14px; color: #444;">
+
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-envelope"
+                                        style="color: #006dff; font-size: 16px; width: 20px; text-align: center;"></i>
+                                    <span dir="ltr"
+                                        style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ user.email }}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-phone"
+                                        style="color: #006dff; font-size: 16px; width: 20px; text-align: center;"></i>
+                                    <span dir="ltr" style="font-weight: 700;">
+                                        {{ orphan.guardian.phone|default:"غير متوفر" }}
                                     </span>
-                                </p>
-                                <p style="margin: 0;">
-                                    <i class="fas fa-building" style="width: 20px; color: #006dff;"></i> الأيتام
-                                </p>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-building"
+                                        style="color: #006dff; font-size: 16px; width: 20px; text-align: center;"></i>
+                                    <span style="font-weight: 700;">لوحة حسابات الأيتام</span>
+                                </div>
+
                             </div>
+
                             <a href="{% url 'logout_view' %}"
-                                style="text-decoration: none; display: block; margin-top: 15px;">
+                                style="text-decoration: none; display: block; margin-top: 20px;">
                                 <button type="button" class="logout-btn" id="logoutBtn"
-                                    style="width: 100%; background: #dc3545; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                                    style="width: 100%; background: #dc3545; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.3s;"
+                                    onmouseover="this.style.background='#c82333'"
+                                    onmouseout="this.style.background='#dc3545'">
+                                    <i class="fas fa-sign-out-alt ms-1"></i> تسجيل الخروج
                                 </button>
                             </a>
                         </div>
                     </div>
                 </div>
             </nav>
-
+            {% if orphan.sponsorship_status == 'Pending' %}
+            <div class="container mt-4">
+                <div class="alert alert-warning text-center shadow-sm"
+                    style="border-left: 5px solid #D69E2E; background-color: #fffdf5;">
+                    <i class="fas fa-lock fa-3x mb-3" style="color: #D69E2E;"></i>
+                    <h4 style="font-weight: 800; color: #D69E2E;">حسابك قيد المراجعة والتدقيق</h4>
+                    <p style="font-size: 1.1rem; color: var(--dark-text); margin-bottom: 0;">
+                        أهلاً بك في منصة كفالة. لقد استلمنا طلبك ومستنداتك بنجاح.
+                        تقوم الإدارة حالياً بمراجعة الأوراق الثبوتية.
+                        بمجرد الاعتماد، سيتم تفعيل حسابك بالكامل وإدراج اليتيم في قائمة الكفالة.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
             {% block content %}
             {% endblock %}
 
