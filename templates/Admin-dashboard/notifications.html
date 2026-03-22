@@ -153,10 +153,8 @@
             let content = normalizeArabic(row.querySelector(".notif-content").innerText);
             let source = normalizeArabic(row.querySelector(".notif-source").innerText);
 
-            // 1. Search Check
             let matchesSearch = content.includes(searchValue);
 
-            // 2. Bilingual Source Check (Now catches Donor, Sponsor, and Arabic variations!)
             let matchesSource = true;
             if (sourceValue === 'system') {
                 matchesSource = source.includes('system') || source.includes('نظام');
@@ -164,7 +162,6 @@
                 matchesSource = source.includes('sponsor') || source.includes('donor') || source.includes('كافل');
             }
 
-            // Apply filter
             if (matchesSearch && matchesSource) {
                 row.style.display = "";
             } else {
