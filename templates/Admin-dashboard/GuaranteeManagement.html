@@ -165,13 +165,11 @@
         rows.forEach(row => {
             let donorName = normalizeArabic(row.querySelector(".spon-donor").innerText);
             let orphanName = normalizeArabic(row.querySelector(".spon-orphan").innerText);
-            let sponType = row.querySelector(".spon-type").innerText.toLowerCase(); // Read the raw table text
+            let sponType = row.querySelector(".spon-type").innerText.toLowerCase(); 
             let sponStatus = row.querySelector(".spon-status").getAttribute("data-status");
 
-            // 1. Search Check
             let matchesSearch = donorName.includes(searchValue) || orphanName.includes(searchValue);
 
-            // 2. Bilingual Type Check (The Fix!)
             let matchesType = true;
             if (typeValue === 'financial') {
                 matchesType = sponType.includes('financial') || sponType.includes('مالي');
@@ -181,10 +179,8 @@
                 matchesType = sponType.includes('health') || sponType.includes('medical') || sponType.includes('صحي');
             }
 
-            // 3. Strict Status Check
             let matchesStatus = (statusValue === "") || (sponStatus === statusValue);
 
-            // Apply filter
             if (matchesSearch && matchesType && matchesStatus) {
                 row.style.display = "";
             } else {

@@ -141,20 +141,16 @@
             let payMethod = row.querySelector(".pay-method").innerText.toLowerCase();
             let payStatus = row.querySelector(".pay-status").getAttribute("data-status");
 
-            // 1. Search Check (by Donor Name)
             let matchesSearch = donorName.includes(searchValue);
 
-            // 2. Bilingual Method Check
             let matchesMethod = true;
             if (methodValue === 'bank') matchesMethod = payMethod.includes('bank') || payMethod.includes('بنك');
             else if (methodValue === 'palpay') matchesMethod = payMethod.includes('palpay') || payMethod.includes('بال');
             else if (methodValue === 'cash') matchesMethod = payMethod.includes('cash') || payMethod.includes('كاش');
             else if (methodValue === 'wallet') matchesMethod = payMethod.includes('wallet') || payMethod.includes('محفظ');
 
-            // 3. Strict Status Check using hidden data-attribute
             let matchesStatus = (statusValue === "") || (payStatus === statusValue);
 
-            // Apply filter
             if (matchesSearch && matchesMethod && matchesStatus) {
                 row.style.display = "";
             } else {

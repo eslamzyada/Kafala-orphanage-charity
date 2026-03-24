@@ -63,7 +63,6 @@
     const availableOrphans = parseInt('{{ available_orphans|default:0 }}');
     const monthlyData = JSON.parse('{{ monthly_counts|safe }}');
 
-    // Shared styling options for beautiful Arabic fonts
     const chartFont = { family: 'Tajawal, Cairo, sans-serif', size: 14 };
 
     // --- CHART 1: THE BAR CHART ---
@@ -90,7 +89,7 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1, // Forces the axis to only use whole numbers (1, 2, 3...)
+                        stepSize: 1,
                         font: chartFont
                     }
                 },
@@ -99,7 +98,6 @@
         }
     });
 
-    // --- CHART 2: THE LINE CHART ---
     const ctx2 = document.getElementById('chart2').getContext('2d');
     new Chart(ctx2, {
         type: 'line',
@@ -121,7 +119,7 @@
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false, // The magic rule to stop the squishing!
+            maintainAspectRatio: false,
             plugins: {
                 legend: { labels: { font: chartFont } }
             },
@@ -129,7 +127,7 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1, // Forces the axis to only use whole numbers
+                        stepSize: 1, 
                         font: chartFont
                     }
                 },

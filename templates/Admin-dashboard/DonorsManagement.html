@@ -77,7 +77,6 @@
 
 {% block extra_scripts %}
 <script>
-    // The Arabic Normalizer
     function normalizeArabic(text) {
         if (!text) return "";
         return text.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase().trim();
@@ -86,7 +85,6 @@
     function filterDonors() {
         let searchValue = normalizeArabic(document.getElementById("searchInput").value);
         let statusValue = document.getElementById("statusFilter").value;
-        // let typeValue = document.getElementById("typeFilter").value; // Ready for when you add Type to DB
 
         let rows = document.querySelectorAll(".donor-row");
 
@@ -95,13 +93,10 @@
             let email = row.querySelector(".donor-email").innerText.toLowerCase();
             let status = row.querySelector(".donor-status").getAttribute("data-status");
 
-            // 1. Search Check (Matches either Name OR Email!)
             let matchesSearch = name.includes(searchValue) || email.includes(searchValue);
 
-            // 2. Strict Status Check (Using data-status attributes for perfection)
             let matchesStatus = (statusValue === "") || (status === statusValue);
 
-            // Apply the filter
             if (matchesSearch && matchesStatus) {
                 row.style.display = "";
             } else {

@@ -77,11 +77,9 @@
 
 {% block scripts %}
 <script>
-    // These functions use the getCookie CSRF setup we placed in base.html!
 
     function markAsRead(notifId) {
-        // Construct the URL dynamically based on your views.py structure
-        const url = `/sponsor-dashboard/notifications/${notifId}/mark-read/`; // Adjust if your URL is different!
+        const url = `/sponsor-dashboard/notifications/${notifId}/mark-read/`; 
 
         fetch(url, {
             method: 'POST',
@@ -91,20 +89,16 @@
             }
         }).then(response => {
             if (response.ok) {
-                // Visually update the notification without reloading the page
                 const notifElement = document.getElementById(`notif-${notifId}`);
                 notifElement.style.backgroundColor = '#fff';
                 notifElement.style.border = '1px solid #eee';
 
-                // Unbold the title
                 const title = notifElement.querySelector('h4');
                 title.style.fontWeight = 'normal';
 
-                // Hide the check button
                 const actionDiv = notifElement.querySelector('.notif-action');
                 if (actionDiv) actionDiv.style.display = 'none';
 
-                // Change Icon color to gray
                 const iconDiv = notifElement.querySelector('div > i').parentElement;
                 iconDiv.style.background = '#f1f1f1';
                 iconDiv.style.color = '#888';
@@ -113,7 +107,7 @@
     }
 
     function markAllAsRead() {
-        const url = `/sponsor-dashboard/notifications/mark-all-read/`; // Adjust if your URL is different!
+        const url = `/sponsor-dashboard/notifications/mark-all-read/`; 
 
         fetch(url, {
             method: 'POST',
@@ -123,7 +117,6 @@
             }
         }).then(response => {
             if (response.ok) {
-                // Reload page to clear all badges perfectly
                 window.location.reload();
             }
         });
