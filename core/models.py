@@ -52,32 +52,22 @@ class Orphan(models.Model):
         ('Female', 'Female'),
     ]
 
-    SPONSORSHIP_STATUS_CHOICES = [
-        ('Available', 'Available'),
-        ('Sponsored', 'Sponsored'),
-    ]
-
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='orphan_profile')
     username = models.CharField(max_length=150, unique=True, null=True, blank=True) 
     name = models.CharField(max_length=191)
     age = models.IntegerField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
     area = models.CharField(max_length=191)
-    social_status = models.CharField(max_length=191)
+    social_status = models.CharField(max_length=100, default='غير محدد')
     image = models.ImageField(upload_to='orphans/', null=True, blank=True)
     
     guardian_name = models.CharField(max_length=191, null=True, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     contact_email = models.EmailField(max_length=191, null=True, blank=True)
 
-    health_status = models.CharField(max_length=191)
+    health_status = models.CharField(max_length=100, default='سليمة')
     health_details = models.TextField(null=True, blank=True)
 
-    sponsorship_status = models.CharField(
-        max_length=20,
-        choices=SPONSORSHIP_STATUS_CHOICES,
-        default='Available',
-    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -141,6 +131,7 @@ class Sponsorship(models.Model):
         ('Financial', 'Financial'),
         ('Educational', 'Educational'),
         ('Health', 'Health'),
+        ('Monthly', 'Monthly'),
     ]
 
     STATUS_CHOICES = [
@@ -148,6 +139,7 @@ class Sponsorship(models.Model):
         ('Active', 'Active'),
         ('Completed', 'Completed'),
         ('Canceled', 'Canceled'),
+        ('Ended', 'Ended'),
     ]
 
     donor = models.ForeignKey(

@@ -66,10 +66,10 @@
                     <div class="menu-item"><span class="menu-icon"><i class="fas fa-cog"></i></span><span>تعديل
                             الحساب</span></div>
                 </a>
-                <a href="{% url 'logout_view' %}" style="text-decoration: none; color: inherit;">
-                    <div class="menu-item"><span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span><span>
-                            تسجيل خروج</span></div>
-                </a>
+                <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn">تسجيل الخروج</button>
+                </form>
             </div>
         </div>
 

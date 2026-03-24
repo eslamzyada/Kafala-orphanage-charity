@@ -9,7 +9,7 @@ from django.db.models.functions import ExtractMonth
 from django.utils import timezone
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 import random
@@ -17,12 +17,11 @@ from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse  
-import google.generativeai as genai
 import requests
 import os
+from django.db import transaction
 
 
-genai.configure(api_key="gen-lang-client-0882826838")
 
 @csrf_exempt 
 def kafala_ai_assistant(request):
@@ -351,50 +350,87 @@ def reject_orphan_request(request, orphan_id):
     messages.success(request, 'تم رفض الطلب وحذفه من النظام بنجاح.')
     return redirect('manage_orphans')
 
+@login_required(login_url='login_view')
+@user_passes_test(lambda u: u.is_superuser, login_url='index')
 def add_orphan(request):
     if request.method == 'POST':
         username = request.POST.get('username') 
         name = request.POST.get('name') 
         password = request.POST.get('password') 
-        age = request.POST.get('age')
-        gender = request.POST.get('gender')
-        area = request.POST.get('area')
-        health_status = request.POST.get('health_status')
-        social_status = request.POST.get('social_status')
         
-        if User.objects.filter(username=username).exists():
-            return redirect('manage_orphans')
+        guardian_choice = request.POST.get('guardian_choice')
+        new_g_username = request.POST.get('new_g_username')
+        new_g_password = request.POST.get('new_g_password')
 
-        User.objects.create_user(username=username, password=password)
         
-        orphan = Orphan.objects.create(
-            username=username, 
-            name=name,         
-            age=age,
-            gender=gender,
-            area=area,
-            health_status=health_status,
-            social_status=social_status,
-        )
-        
-        if 'image' in request.FILES:
-            orphan.image = request.FILES['image']
-            orphan.save()
-            
-        if 'document' in request.FILES:
-            try:
-                _save_document_for_orphan(
-                    orphan,
-                    request.FILES['document'],
-                    "Initial Document",
-                    "",
+        if guardian_choice == 'new' and username == new_g_username:
+            messages.error(request, "خطأ: لا يمكن استخدام نفس اسم المستخدم لليتيم والوصي. يرجى اختيار أسماء مختلفة.")
+            return redirect('add_orphan') 
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, f"خطأ: اسم المستخدم لليتيم ({username}) محجوز مسبقاً.")
+            return redirect('add_orphan')
+
+        if guardian_choice == 'new' and User.objects.filter(username=new_g_username).exists():
+            messages.error(request, f"خطأ: اسم المستخدم للوصي ({new_g_username}) محجوز مسبقاً.")
+            return redirect('add_orphan')
+
+
+        try:
+            with transaction.atomic():
+                guardian = None
+
+                if guardian_choice == 'existing':
+                    guardian_id = request.POST.get('guardian_id')
+                    guardian = Guardian.objects.get(id=guardian_id)
+                        
+                elif guardian_choice == 'new':
+                    g_user = User.objects.create_user(username=new_g_username, password=new_g_password)
+                    guardian = Guardian.objects.create(
+                        user=g_user, 
+                        name=request.POST.get('new_g_name'), 
+                        phone=request.POST.get('new_g_phone')
+                    )
+
+                orphan_user = User.objects.create_user(username=username, password=password)
+                
+                orphan = Orphan.objects.create(
+                    user=orphan_user,
+                    username=username, 
+                    name=name,         
+                    age=request.POST.get('age'),
+                    gender=request.POST.get('gender'),
+                    area=request.POST.get('area'),
+                    health_status=request.POST.get('health_status'),
+                    social_status=request.POST.get('social_status'),
+                    guardian=guardian,
+                    sponsorship_status='Pending'
                 )
-            except ValidationError:
-                pass
+                
+                if 'image' in request.FILES:
+                    orphan.image = request.FILES['image']
+                    orphan.save()
+                    
+                if 'document' in request.FILES:
+                    try:
+                        _save_document_for_orphan(
+                            orphan,
+                            request.FILES['document'],
+                            "Initial Document",
+                            "",
+                        )
+                    except ValidationError:
+                        pass
+                
+                messages.success(request, "تمت إضافة اليتيم والوصي بنجاح!")
+                return redirect('manage_orphans')
+
+        except Exception as e:
+            messages.error(request, "حدث خطأ غير متوقع أثناء الحفظ. يرجى المحاولة مرة أخرى.")
+            return redirect('add_orphan')
             
-        return redirect('manage_orphans')
-        
-    return render(request, 'Admin-dashboard/newOrphan.html')
+    guardians = Guardian.objects.all()
+    return render(request, 'Admin-dashboard/newOrphan.html', {'guardians': guardians})
 
 @login_required(login_url='index')
 def admin_orphan_details(request, orphan_id):
