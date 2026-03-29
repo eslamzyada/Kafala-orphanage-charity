@@ -1,15 +1,21 @@
 from django.urls import path
 from . import views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('', views.index, name='index'), 
     path('details/', views.details, name='details'),
     path('login/', views.login_view, name='login_view'),
     path('register/', views.register_view, name='register_view'),
+    path('register/guardian/', views.guardian_register, name='guardian_register'),
     path('logout/', views.logout_view, name='logout_view'),
-    
+    path('password_reset/', auth_views.PasswordResetView.as_view(template_name='landing/password_reset.html'), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='landing/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='landing/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='landing/password_reset_complete.html'), name='password_reset_complete'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin-dashboard/orphans/', views.manage_orphans, name='manage_orphans'),
+    path('admin-dashboard/guardians/', views.manage_guardians, name='manage_guardians'),
     path('admin-dashboard/donors/', views.manage_donors, name='manage_donors'),
     path('admin-dashboard/sponsorships/', views.manage_sponsorships, name='manage_sponsorships'),
     path('admin-dashboard/payments/', views.manage_payments, name='manage_payments'),
@@ -30,7 +36,6 @@ urlpatterns = [
 
     path('orphan-dashboard/', views.orphan_dashboard, name='orphan_dashboard'),
     path('orphan/details/', views.orphan_profile, name='orphan_details'),
-    path('orphan/documents/', views.orphan_documents, name='orphan_documents'),
     path('orphan/sponsorships/', views.orphan_sponsorships, name='orphan_sponsorships'),
     path('orphan/notifications/', views.orphan_notifications, name='orphan_notifications'),
     path('orphan/edit-profile/', views.orphan_edit_profile, name='orphan_edit_profile'),
@@ -48,10 +53,22 @@ urlpatterns = [
     path('donor-dashboard/payment/<int:payment_id>/checkout/', views.pay_checkout, name='pay_checkout'),
     path('donor-dashboard/sponsorship/<int:spon_id>/pay-now/', views.initiate_sponsorship_payment, name='initiate_sponsorship_payment'),
     path('donor-dashboard/orphan/<int:orphan_id>/sponsor/', views.create_new_sponsorship, name='create_new_sponsorship'),
-    path('sponsor-dashboard/notifications/<int:notif_id>/mark-read/', views.mark_donor_notification_read, name='mark_donor_notification_read'),
-    path('sponsor-dashboard/notifications/mark-all-read/', views.mark_all_donor_notifications_read, name='mark_all_donor_notifications_read'),
+    path('admin-dashboard/sponsorship/approve/<int:sponsorship_id>/', views.approve_sponsorship, name='approve_sponsorship'),
     path('donor-dashboard/payment/<int:payment_id>/stripe/', views.create_stripe_checkout_session, name='create_stripe_checkout_session'),
     path('api/ai-assistant/', views.kafala_ai_assistant, name='kafala_ai_assistant'),
-    path('admin-dashboard/orphans/approve/<int:orphan_id>/', views.approve_orphan_request, name='approve_orphan_request'),
+    path('admin-dashboard/orphans/approve/<int:orphan_id>/', views.approve_orphan, name='approve_orphan_request'),
     path('admin-dashboard/orphans/reject/<int:orphan_id>/', views.reject_orphan_request, name='reject_orphan_request'),
+    path('admin-dashboard/sponsorship/reject/<int:sponsorship_id>/', views.reject_sponsorship, name='reject_sponsorship'),
+    path('guardian/dashboard/', views.guardian_dashboard, name='guardian_dashboard'),
+    path('guardian/my-orphans/', views.guardian_my_orphans, name='guardian_my_orphans'),
+    path('guardian/orphan/<int:orphan_id>/upload-document/', views.guardian_upload_document, name='guardian_upload_document'),
+    path('guardian/apply-orphan/', views.guardian_apply_orphan, name='guardian_apply_orphan'),
+    path('guardian/profile/', views.guardian_profile, name='guardian_profile'),
+    path('guardian/notifications/', views.guardian_notifications, name='guardian_notifications'),
+    path('admin-dashboard/document/<int:doc_id>/toggle/', views.toggle_document_visibility, name='toggle_document_visibility'),
+    path('manage-guardians/', views.manage_guardians, name='manage_guardians'),
+    path('delete-guardian/<int:guardian_id>/', views.delete_guardian, name='delete_guardian'),
+    path('notifications/read/<int:notif_id>/', views.mark_notification_read, name='mark_notif_read'),
+    path('notifications/read-all/', views.mark_all_notifications_read, name='mark_all_notifs_read'),
+    path('notifications/delete/<int:notif_id>/', views.delete_notification, name='delete_notification'),
     ]

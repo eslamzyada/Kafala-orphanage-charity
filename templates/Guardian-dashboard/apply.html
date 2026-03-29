@@ -1,0 +1,160 @@
+{% extends 'Guardian-dashboard/base.html' %}
+{% load static %}
+
+{% block title %}تسجيل يتيم جديد | كفالة{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid #eef0f2;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        padding: 30px;
+        margin: 0 auto;
+    }
+    .form-group label {
+        font-weight: 700;
+        color: #444;
+        display: block;
+        margin-bottom: 8px;
+        text-align: right;
+    }
+    .form-control-custom {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-family: inherit;
+        transition: 0.3s;
+        background-color: #fafafa;
+    }
+    .form-control-custom:focus {
+        border-color: var(--primary-teal);
+        box-shadow: 0 0 0 3px rgba(42, 117, 107, 0.1);
+        outline: none;
+        background-color: #fff;
+    }
+    .custom-file-upload {
+        border: 2px dashed #ddd;
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+        transition: 0.3s;
+        cursor: pointer;
+        background-color: #fafafa;
+    }
+    .custom-file-upload:hover {
+        border-color: var(--primary-teal);
+        background-color: #f0fdf4;
+    }
+    .file-input {
+        display: none;
+    }
+</style>
+
+<div class="main-content">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 style="color: var(--primary-teal); font-weight: 800; margin-bottom: 5px;">
+                <i class="fas fa-user-plus me-2"></i> تسجيل يتيم جديد
+            </h3>
+            <p class="text-muted fw-bold mb-0">
+                سيتم إنشاء حساب خاص لليتيم وربطه تلقائياً بحسابك كوصي.
+            </p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show fw-bold" role="alert" style="border-radius: 10px; max-width: 700px; margin: 0 auto 20px auto;">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="form-container" style="max-width: 700px;">
+        <form method="POST" action="{% url 'guardian_apply_orphan' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #e9ecef; margin-bottom: 30px;">
+                <h6 style="color: var(--secondary-blue); font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid var(--secondary-blue); padding-bottom: 8px; display: inline-block;">
+                    <i class="fas fa-key me-2"></i> بيانات دخول اليتيم للنظام
+                </h6>
+                
+                <div class="row g-3">
+                    <div class="col-md-6 form-group">
+                        <label>اسم المستخدم (للدخول) <span class="text-danger">*</span></label>
+                        <input type="text" name="orphan_username" required dir="ltr" placeholder="مثال: ahmad2015" class="form-control-custom" style="text-align: left;">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label>كلمة المرور <span class="text-danger">*</span></label>
+                        <input type="password" name="orphan_password" required dir="ltr" placeholder="تعيين كلمة مرور" class="form-control-custom" style="text-align: left;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12 form-group">
+                    <label>اسم اليتيم الرباعي <span class="text-danger">*</span></label>
+                    <input type="text" name="name" required placeholder="مثال: أحمد محمد سعيد العلي" class="form-control-custom">
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label>العمر <span class="text-danger">*</span></label>
+                    <input type="number" name="age" min="0" max="18" required placeholder="مثال: 8" class="form-control-custom">
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label>الجنس <span class="text-danger">*</span></label>
+                    <select name="gender" required class="form-control-custom">
+                        <option value="" disabled selected>اختر الجنس</option>
+                        <option value="Male">ذكر</option>
+                        <option value="Female">أنثى</option>
+                    </select>
+                </div>
+
+                <div class="col-12 form-group">
+                    <label>منطقة السكن <span class="text-danger">*</span></label>
+                    <input type="text" name="area" required placeholder="مثال: غزة - حي الرمال" class="form-control-custom">
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label>الحالة الاجتماعية <span class="text-danger">*</span></label>
+                    <select name="social_status" required class="form-control-custom">
+                        <option value="يتيم الأب">يتيم الأب</option>
+                        <option value="يتيم الأم">يتيم الأم</option>
+                        <option value="يتيم لأبوين">يتيم لأبوين</option>
+                        <option value="مفقود الأبوين">مفقود الأبوين</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label>الحالة الصحية <span class="text-danger">*</span></label>
+                    <input type="text" name="health_status" required placeholder="مثال: سليمة / يحتاج رعاية خاصة" class="form-control-custom">
+                </div>
+
+                <div class="col-12 form-group mt-2">
+                    <label><i class="fas fa-camera me-2 text-muted"></i> صورة اليتيم (اختياري)</label>
+                    <label for="orphan-photo" class="custom-file-upload d-block w-100">
+                        <input type="file" name="image" accept="image/*" id="orphan-photo" class="file-input" onchange="document.getElementById('photo-label').textContent = this.files[0]?.name || 'اضغط هنا لاختيار صورة من جهازك'">
+                        <i class="fas fa-cloud-upload-alt fa-2x mb-2" style="color: var(--primary-teal);"></i><br>
+                        <span id="photo-label" class="fw-bold text-muted">اضغط هنا لاختيار صورة من جهازك</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-5 justify-content-center border-top pt-4">
+                <button type="submit" class="btn px-5 py-2 fw-bold" style="background-color: var(--primary-teal); color: white; border-radius: 8px; font-size: 1.1rem;">
+                    <i class="fas fa-paper-plane me-2"></i> تقديم الطلب
+                </button>
+                <a href="{% url 'guardian_my_orphans' %}" class="btn btn-light px-5 py-2 fw-bold border" style="border-radius: 8px; color: #555; font-size: 1.1rem;">
+                    إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

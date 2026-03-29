@@ -32,7 +32,10 @@ class Guardian(models.Model):
     relation_to_orphan = models.CharField(max_length=50, verbose_name="صلة القرابة (مثال: أم، عم، جد)")
     
     legal_document = models.FileField(upload_to='guardian_docs/', verbose_name="مستند الوصاية")
+    id_document = models.FileField(upload_to='guardian_ids/', null=True, blank=True, verbose_name="صورة هوية الوصي للتحقق")
     
+    is_id_public = models.BooleanField(default=False, verbose_name="السماح للكافل برؤية الهوية")
+
     PAYOUT_CHOICES = [
         ('Bank', 'حوالة بنكية'),
         ('Wallet', 'محفظة إلكترونية (مثل Jawwal Pay)'),
@@ -45,11 +48,32 @@ class Guardian(models.Model):
 
     def __str__(self):
         return self.name
+    
+    @property
+    def first_name(self):
+        if self.name:
+            return self.name.split()[0]
+        return "أيها الوصي الكريم"
 
 class Orphan(models.Model):
     GENDER_CHOICES = [
-        ('Male', 'Male'),
-        ('Female', 'Female'),
+        ('Male', 'ذكر'),
+        ('Female', 'أنثى'),
+    ]
+    
+    SOCIAL_STATUS_CHOICES = [
+        ('يتيم الأب', 'يتيم الأب'),
+        ('يتيم الأم', 'يتيم الأم'),
+        ('يتيم الأبوين', 'يتيم الأبوين'),
+        ('مفقود الأبوين', 'مفقود الأبوين'),
+        ('غير محدد', 'غير محدد'),
+    ]
+    
+    SPONSORSHIP_NEEDS = [
+        ('Monthly', 'كفالة شهرية شاملة'),
+        ('Financial', 'كفالة مالية (مقطوعة)'),
+        ('Educational', 'كفالة تعليمية'),
+        ('Health', 'كفالة صحية'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='orphan_profile')
@@ -58,9 +82,18 @@ class Orphan(models.Model):
     age = models.IntegerField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
     area = models.CharField(max_length=191)
-    social_status = models.CharField(max_length=100, default='غير محدد')
+    social_status = models.CharField(max_length=100, choices=SOCIAL_STATUS_CHOICES, default='غير محدد')
     image = models.ImageField(upload_to='orphans/', null=True, blank=True)
     
+    story = models.TextField(null=True, blank=True, verbose_name="القصة والخلفية الإنسانية")
+    sponsorship_need = models.CharField(max_length=50, choices=SPONSORSHIP_NEEDS, default='Monthly', verbose_name="نوع الكفالة المطلوبة")
+    
+    birth_certificate = models.FileField(upload_to='orphan_certs/birth/', null=True, blank=True, verbose_name="شهادة الميلاد")
+    death_certificate = models.FileField(upload_to='orphan_certs/death/', null=True, blank=True, verbose_name="شهادة الوفاة / إثبات الفقد")
+
+    is_birth_cert_public = models.BooleanField(default=False, verbose_name="السماح للكافل برؤية شهادة الميلاد")
+    is_death_cert_public = models.BooleanField(default=False, verbose_name="السماح للكافل برؤية شهادة الوفاة")
+
     guardian_name = models.CharField(max_length=191, null=True, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     contact_email = models.EmailField(max_length=191, null=True, blank=True)
@@ -101,13 +134,13 @@ class OrphanDocument(models.Model):
     document = models.FileField(upload_to='orphan_docs/%Y/%m/')
     document_type = models.CharField(max_length=50, choices=DOCUMENT_TYPES, default='Other')
     
-    # THE MASTER SWITCH: False = Admin Only, True = Sponsor can download
     is_public = models.BooleanField(default=False, help_text="تفعيل هذا الخيار سيسمح للكافل برؤية وتحميل هذا الملف")
     
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.title} - {self.orphan.name}"
+    
 
 
 class Donor(models.Model):
@@ -142,22 +175,14 @@ class Sponsorship(models.Model):
         ('Ended', 'Ended'),
     ]
 
-    donor = models.ForeignKey(
-        Donor, on_delete=models.CASCADE, related_name='sponsorships'
-    )
-    orphan = models.ForeignKey(
-        Orphan, on_delete=models.CASCADE, related_name='sponsorships'
-    )
+    donor = models.ForeignKey(Donor, on_delete=models.CASCADE, related_name='sponsorships')
+    orphan = models.ForeignKey(Orphan, on_delete=models.CASCADE, related_name='sponsorships')
 
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
-    sponsorship_type = models.CharField(
-        max_length=50, choices=SPONSORSHIP_TYPES, default='Financial'
-    )
+    sponsorship_type = models.CharField(max_length=50, choices=SPONSORSHIP_TYPES, default='Financial')
     amount = models.DecimalField(max_digits=8, decimal_places=2)
-    status = models.CharField(
-        max_length=50, choices=STATUS_CHOICES, default='Pending'
-    )
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -185,52 +210,27 @@ class Payment(models.Model):
     payment_date = models.DateField()
     payment_method = models.CharField(max_length=50, choices=PAYMENT_METHODS, default='Cash')
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
-
     receipt_image = models.ImageField(upload_to='receipts/%Y/%m/', null=True, blank=True)
-    
     transaction_reference = models.CharField(max_length=100, null=True, blank=True) 
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Payment of {self.amount} for {self.sponsorship.orphan.name}"
-
-class Document(models.Model):
-    orphan = models.ForeignKey(Orphan, on_delete=models.CASCADE, related_name='documents')
-    title = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
-    file = models.FileField(
-        upload_to=orphan_document_upload_to,
-        validators=[
-            FileExtensionValidator(ALLOWED_DOCUMENT_EXTENSIONS),
-            validate_document_file,
-        ],
-    )
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.title} for {self.orphan.name}"
-
+    
 class Notification(models.Model):
-    SOURCE_CHOICES = [
-        ('System', 'System'),
-        ('Donor', 'Donor'),
-    ]
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
     
-    orphan = models.ForeignKey(Orphan, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
-    donor = models.ForeignKey(Donor, on_delete=models.CASCADE, null=True, blank=True, related_name='donor_notifications')
+    title = models.CharField(max_length=255, verbose_name="عنوان الإشعار")
+    message = models.TextField(verbose_name="نص الإشعار")
     
-    title = models.CharField(max_length=255)
-    message = models.TextField()
-    source = models.CharField(max_length=50, choices=SOURCE_CHOICES, default='System')
-    is_read = models.BooleanField(default=False)
+    link = models.CharField(max_length=255, blank=True, null=True, verbose_name="رابط التوجيه")
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False, verbose_name="تمت القراءة")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="وقت وتاريخ الإشعار")
 
     def __str__(self):
-        if self.orphan:
-            return f"To Orphan: {self.orphan.name} - {self.title}"
-        elif self.donor:
-            return f"To Donor: {self.donor.name} - {self.title}"
-        return self.title
+        if self.recipient:
+            return f"إشعار للمستخدم: {self.recipient.username} - {self.title}"
+        return f"إشعار نظام عام - {self.title}"
+    

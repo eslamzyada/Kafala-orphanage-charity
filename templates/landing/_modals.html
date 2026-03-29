@@ -1,44 +1,7 @@
 {% load static %}
 
 <style>
-    .modal-row {
-        display: flex;
-        flex-wrap: wrap;
-        margin-right: -10px;
-        margin-left: -10px;
-    }
-
-    .modal-col-6 {
-        flex: 0 0 50%;
-        max-width: 50%;
-        padding-right: 10px;
-        padding-left: 10px;
-    }
-
-    .modal-col-8 {
-        flex: 0 0 66.666667%;
-        max-width: 66.666667%;
-        padding-right: 10px;
-        padding-left: 10px;
-    }
-
-    .modal-col-4 {
-        flex: 0 0 33.333333%;
-        max-width: 33.333333%;
-        padding-right: 10px;
-        padding-left: 10px;
-    }
-
-    @media (max-width: 768px) {
-
-        .modal-col-6,
-        .modal-col-8,
-        .modal-col-4 {
-            flex: 0 0 100%;
-            max-width: 100%;
-        }
-    }
-
+    /* تم الإبقاء على التنسيقات الجمالية الخاصة بك كما هي */
     .custom-modal {
         position: fixed !important;
         z-index: 9999 !important;
@@ -61,7 +24,7 @@
         max-height: 85vh !important;
         overflow-y: auto !important;
         width: 90% !important;
-        max-width: 600px !important;
+        max-width: 500px !important; /* تقليل العرض لأن النموذج أصبح أبسط */
         margin: 3rem auto !important;
         position: relative;
     }
@@ -97,8 +60,7 @@
         color: var(--accent-color);
     }
 
-    .user-inputs,
-    #userType {
+    .user-inputs {
         width: 100%;
         padding: 12px;
         border-radius: 8px;
@@ -109,8 +71,7 @@
         box-sizing: border-box;
     }
 
-    .user-inputs:focus,
-    #userType:focus {
+    .user-inputs:focus {
         border-color: var(--primary-color);
         box-shadow: 0 0 5px rgba(42, 117, 107, 0.2);
     }
@@ -139,149 +100,24 @@
 <div id="myModalRegister" class="custom-modal">
     <div class="custom-modal-content">
         <span class="close-btn" onclick="document.getElementById('myModalRegister').style.display='none'">&times;</span>
-        <h2 class="title-modal">إنشاء حساب جديد</h2>
+        <h2 class="title-modal">إنشاء حساب متبرع (كفيل)</h2>
         <div class="text-center mb-4" style="text-align: center;">
-            <img src="{% static 'img/loho.png' %}" alt="" width="90" height="90" />
+            <img src="{% static 'img/loho.png' %}" alt="Kafala Logo" width="90" height="90" />
         </div>
 
-        <form method="POST" action="{% url 'register_view' %}" enctype="multipart/form-data" novalidate>
+        <form method="POST" action="{% url 'register_view' %}" novalidate>
             {% csrf_token %}
+            
+            <input type="hidden" name="user_type" value="sponsor">
 
-            <select id="userType" name="user_type" onchange="toggleFields()" class="user-inputs mb-3"
-                style="font-weight: bold;">
-                <option value="sponsor" selected>كفيل (متبرع)</option>
-                <option value="supported">يتيم / ولي أمر (مستفيد)</option>
-            </select>
+            <input dir="ltr" class="user-inputs" type="text" name="sponsor_username" placeholder="اسم المستخدم (للدخول للنظام)" required />
+            <input dir="rtl" class="user-inputs" type="text" name="sponsor_name" placeholder="الاسم الكامل (أو اسم المؤسسة)" required />
+            <input dir="ltr" class="user-inputs" type="email" name="sponsor_email" placeholder="البريد الإلكتروني" required />
+            <input dir="ltr" class="user-inputs" type="password" name="sponsor_password" placeholder="كلمة المرور" required />
 
-            <div id="sponsorFields">
-                <input dir="ltr" class="user-inputs" type="text" name="sponsor_username"
-                    placeholder="اسم المستخدم (للدخول للنظام)" required />
-                <input dir="rtl" class="user-inputs" type="text" name="sponsor_name"
-                    placeholder="الاسم الكامل (أو اسم المؤسسة)" required />
-                <input dir="ltr" class="user-inputs" type="email" name="sponsor_email" placeholder="البريد الإلكتروني"
-                    required />
-                <input dir="ltr" class="user-inputs" type="password" name="sponsor_password" placeholder="كلمة المرور"
-                    required />
-            </div>
-
-            <div id="supportedFields" style="display: none;">
-                <h5 style="color: var(--primary-color); margin-bottom: 15px; font-weight: 800;">بيانات الوصي (مقدم
-                    الطلب)</h5>
-                <div class="modal-row">
-                    <div class="modal-col-6">
-                        <input dir="ltr" class="user-inputs" type="text" name="guardian_username"
-                            placeholder="اسم المستخدم (للدخول)" />
-                    </div>
-                    <div class="modal-col-6">
-                        <input dir="ltr" class="user-inputs" type="password" name="guardian_password"
-                            placeholder="كلمة المرور" />
-                    </div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-col-12" style="width: 100%; padding: 0 10px;">
-                        <input dir="ltr" class="user-inputs" type="email" name="guardian_email" placeholder="البريد الإلكتروني للتواصل (إلزامي)" required />
-                    </div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-col-8">
-                        <input dir="rtl" class="user-inputs" type="text" name="guardian_name"
-                            placeholder="اسم الوصي الرباعي" />
-                    </div>
-                    <div class="modal-col-4">
-                        <input dir="ltr" class="user-inputs" type="text" name="guardian_id" placeholder="رقم الهوية" />
-                    </div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-col-6">
-                        <input dir="ltr" class="user-inputs" type="text" name="guardian_phone"
-                            placeholder="رقم الهاتف للتواصل" />
-                    </div>
-                    <div class="modal-col-6">
-                        <input dir="rtl" class="user-inputs" type="text" name="guardian_relation"
-                            placeholder="صلة القرابة (مثال: أم، عم، جد)" />
-                    </div>
-                </div>
-
-                <div
-                    style="background: #f8f9fa; border: 1px dashed #ccc; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 12px;">
-                    <label for="legal-doc"
-                        style="cursor: pointer; color: var(--primary-color); font-weight: 700; margin: 0;">
-                        <i class="fas fa-file-pdf" style="margin-left: 5px;"></i> رفع مستند الوصاية (إلزامي)
-                    </label>
-                    <input type="file" id="legal-doc" name="legal_document" accept=".pdf,image/*"
-                        style="display: none;" />
-                </div>
-
-                <div class="modal-row">
-                    <div class="modal-col-6">
-                        <select name="payout_method" class="user-inputs" dir="rtl">
-                            <option value="" disabled selected>طريقة استلام الكفالة...</option>
-                            <option value="Bank">حوالة بنكية</option>
-                            <option value="Wallet">محفظة إلكترونية</option>
-                            <option value="Cash">استلام نقدي</option>
-                        </select>
-                    </div>
-                    <div class="modal-col-6">
-                        <input dir="ltr" class="user-inputs" type="text" name="payout_details"
-                            placeholder="رقم الحساب أو المحفظة" />
-                    </div>
-                </div>
-
-                <hr style="margin: 20px 0; border-color: #ddd;">
-                <h5 style="color: var(--primary-color); margin-bottom: 15px; font-weight: 800;">بيانات اليتيم الأساسية
-                </h5>
-
-                <div class="modal-row">
-                    <div class="modal-col-8">
-                        <input dir="rtl" class="user-inputs" type="text" name="orphan_name"
-                            placeholder="الاسم الرباعي لليتيم" />
-                    </div>
-                    <div class="modal-col-4">
-                        <input dir="rtl" class="user-inputs" type="number" name="orphan_age" placeholder="العمر" />
-                    </div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-col-6">
-                        <select name="orphan_gender" class="user-inputs" dir="rtl">
-                            <option value="" disabled selected>الجنس...</option>
-                            <option value="Male">ذكر</option>
-                            <option value="Female">أنثى</option>
-                        </select>
-                    </div>
-                    <div class="modal-col-6">
-                        <select name="orphan_health" class="user-inputs" dir="rtl">
-                            <option value="" disabled selected>الحالة الصحية...</option>
-                            <option value="ممتازة">ممتازة</option>
-                            <option value="جيدة">جيدة</option>
-                            <option value="مريض">مريض</option>
-                            <option value="ذوي احتياجات خاصة">ذوي احتياجات خاصة</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-col-6">
-                        <input dir="rtl" class="user-inputs" type="text" name="orphan_area"
-                            placeholder="المنطقة السكنية" />
-                    </div>
-                    <div class="modal-col-6">
-                        <input dir="rtl" class="user-inputs" type="text" name="orphan_social"
-                            placeholder="الحالة الاجتماعية" />
-                    </div>
-                </div>
-
-                <div
-                    style="background: #f8f9fa; border: 1px dashed #ccc; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 12px;">
-                    <label for="file-input-orphan"
-                        style="cursor: pointer; color: var(--primary-color); font-weight: 700; margin: 0;">
-                        <i class="fas fa-camera" style="margin-left: 5px;"></i> رفع صورة شخصية لليتيم
-                    </label>
-                    <input type="file" id="file-input-orphan" name="orphan_photo" accept="image/*"
-                        style="display: none;" />
-                </div>
-            </div>
-
-            <button type="submit" class="login-btn">إنشاء حساب وإرسال للتدقيق</button>
+            <button type="submit" class="login-btn">إنشاء حساب متبرع</button>
         </form>
+
         <p style="text-align: center; margin-top: 20px; font-size: 0.95rem;">
             هل تمتلك حساب ؟
             <span style="color: var(--accent-color); font-weight: 800; cursor: pointer;"
@@ -289,6 +125,15 @@
                 تسجيل دخول
             </span>
         </p>
+        
+        <hr style="margin: 20px 0; border-color: #eee;">
+        
+        <div style="text-align: center; background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px dashed #ccc;">
+            <p style="margin-bottom: 10px; font-size: 0.95rem; font-weight: bold; color: #555;">هل أنت ولي أمر وترغب بتسجيل أيتامك؟</p>
+            <a href="{% url 'guardian_register' %}" style="display: inline-block; background-color: white; border: 2px solid var(--primary-color); color: var(--primary-color); padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: 800; transition: 0.3s;">
+                <i class="fas fa-user-shield" style="margin-left: 4px;"></i> بوابة تسجيل الأوصياء
+            </a>
+        </div>
     </div>
 </div>
 
@@ -297,12 +142,11 @@
         <span class="close-btn" onclick="document.getElementById('myModal').style.display='none'">&times;</span>
         <h2 class="title-modal">تسجيل الدخول</h2>
         <div class="text-center mb-4" style="text-align: center;">
-            <img src="{% static 'img/loho.png' %}" alt="" width="90" height="90" />
+            <img src="{% static 'img/loho.png' %}" alt="Kafala Logo" width="90" height="90" />
         </div>
 
         {% if messages %}
-        <div
-            style="background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
+        <div style="background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
             {% for message in messages %}
             {{ message }}<br>
             {% endfor %}
@@ -315,8 +159,9 @@
             <input dir="ltr" class="user-inputs" type="password" name="password" placeholder="كلمة المرور" required />
 
             <div style="text-align: right; margin-bottom: 15px;">
-                <a href="#" style="color: var(--light-text); font-size: 0.9rem; text-decoration: none;">هل نسيت كلمة
-                    المرور؟</a>
+                <a href="{% url 'password_reset' %}" style="color: var(--light-text); font-size: 0.9rem; text-decoration: none; transition: 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--light-text)'">
+                    هل نسيت كلمة المرور؟
+                </a>
             </div>
 
             <button type="submit" class="login-btn">تسجيل الدخول</button>
@@ -333,34 +178,7 @@
 </div>
 
 <script>
-    function toggleFields() {
-        var userType = document.getElementById("userType").value;
-        var sponsorFields = document.getElementById("sponsorFields");
-        var supportedFields = document.getElementById("supportedFields");
-
-        if (userType === "sponsor") {
-            sponsorFields.style.display = "block";
-            supportedFields.style.display = "none";
-            toggleRequired(supportedFields, false);
-            toggleRequired(sponsorFields, true);
-        } else {
-            sponsorFields.style.display = "none";
-            supportedFields.style.display = "block";
-            toggleRequired(sponsorFields, false);
-            toggleRequired(supportedFields, true);
-        }
-    }
-
-    function toggleRequired(container, isRequired) {
-        var inputs = container.querySelectorAll('input, select');
-        inputs.forEach(function (input) {
-            if (isRequired) { input.setAttribute('required', 'required'); }
-            else { input.removeAttribute('required'); }
-        });
-    }
-
     document.addEventListener("DOMContentLoaded", function () {
-        toggleFields();
         {% if messages %}
         document.getElementById('myModal').style.display = 'block';
         {% endif %}

@@ -134,7 +134,7 @@
                 <p style="margin: 0;"><strong>اسم اليتيم:</strong> {{ sponsorship.orphan.name }}</p>
             </div>
             <div
-                style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eeeeee; padding-bottom: 10px;">
                 <p style="margin: 0;"><strong>نوع الكفالة:</strong> {{ sponsorship.get_sponsorship_type_display }}</p>
                 <p style="margin: 0;"><strong>المبلغ الشهري:</strong> ${{ sponsorship.amount }}</p>
             </div>
@@ -157,7 +157,7 @@
 
     function filterSponsorships() {
         let searchValue = normalizeArabic(document.getElementById("searchInput").value);
-        let typeValue = document.getElementById("typeFilter").value; // Now uses English keys
+        let typeValue = document.getElementById("typeFilter").value;
         let statusValue = document.getElementById("statusFilter").value;
 
         let rows = document.querySelectorAll(".spon-row");

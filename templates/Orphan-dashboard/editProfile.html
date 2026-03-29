@@ -77,42 +77,6 @@
                     </div>
                 </div>
 
-                {% if guardian %}
-                <h5 style="color: #666; font-weight: bold; margin-top: 30px; margin-bottom: 15px; border-top: 1px dashed #ccc; padding-top: 20px;"><i class="fas fa-user-shield"></i> بيانات الوصي والمالية</h5>
-                
-                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 250px;">
-                        <label>اسم ولي الأمر / الوصي (للتعديل يرجى مراجعة الإدارة)</label>
-                        <input type="text" class="form-control" value="{{ guardian.name }}" disabled>
-                    </div>
-                    <div style="flex: 1; min-width: 250px;">
-                        <label>رقم هاتف الوصي للتواصل</label>
-                        <input type="tel" name="guardian_phone" class="form-control" value="{{ guardian.phone }}" dir="ltr" required>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 250px;">
-                        <label>البريد الإلكتروني للتواصل</label>
-                        <input type="email" name="guardian_email" class="form-control" value="{{ user.email }}" dir="ltr" required>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 250px;">
-                        <label>طريقة استلام الكفالة المريحة لك</label>
-                        <select name="payout_method" class="form-control" required>
-                            <option value="Bank" {% if guardian.payout_method == 'Bank' %}selected{% endif %}>حوالة بنكية</option>
-                            <option value="Wallet" {% if guardian.payout_method == 'Wallet' %}selected{% endif %}>محفظة إلكترونية</option>
-                            <option value="Cash" {% if guardian.payout_method == 'Cash' %}selected{% endif %}>استلام نقدي باليد</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1; min-width: 250px;">
-                        <label>رقم الحساب البنكي أو المحفظة (إن وجد)</label>
-                        <input type="text" name="payout_details" class="form-control" value="{{ guardian.payout_details|default:'' }}" dir="ltr">
-                    </div>
-                </div>
-                {% endif %}
-
                 <button type="submit" class="form-control btn btn-primary" style="font-weight: bold; background-color: var(--primary-color); border: none; padding: 12px; margin-top: 10px;">حفظ التعديلات</button>
             </div>
         </form>

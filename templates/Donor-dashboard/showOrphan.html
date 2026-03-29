@@ -56,17 +56,34 @@
                     </div>
                 </div>
 
-                <div class="orphan-actions" style="padding: 0 20px 20px 20px; display: flex; gap: 10px;">
-                    <a href="javascript:void(0);"
-                        onclick="document.getElementById('orphanDetailModal_{{ orphan.id }}').style.display='block'"
-                        style="flex: 1; text-align: center; background: #eef2f6; color: #2a756b; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.2s;">التفاصيل</a>
-
-                    <form action="{% url 'create_new_sponsorship' orphan.id %}" method="POST"
-                        style="flex: 1; margin: 0;">
+                <div class="orphan-actions" style="padding: 0 20px 20px 20px;">
+                    <form action="{% url 'create_new_sponsorship' orphan.id %}" method="POST" style="background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #e9ecef;">
                         {% csrf_token %}
-                        <button type="submit"
-                            style="width: 100%; background: #006dff; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">اكفل
-                            الآن</button>
+                        <p style="margin: 0 0 10px 0; font-size: 0.95rem; font-weight: bold; color: #2a756b;">اختر تفاصيل الكفالة:</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                            <select name="sponsorship_type" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; font-size: 0.95rem; background-color: white;">
+                                <option value="Monthly" {% if orphan.sponsorship_need == 'Monthly' %}selected{% endif %}>كفالة شهرية شاملة (50$/شهر)</option>
+                                <option value="Educational" {% if orphan.sponsorship_need == 'Educational' %}selected{% endif %}>كفالة تعليمية (40$/شهر)</option>
+                                <option value="Health" {% if orphan.sponsorship_need == 'Health' %}selected{% endif %}>كفالة صحية (60$/شهر)</option>
+                                <option value="Financial" {% if orphan.sponsorship_need == 'Financial' %}selected{% endif %}>مالية مقطوعة (50$/شهر)</option>
+                            </select>
+                            
+                            <select name="duration_months" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; font-size: 0.95rem; background-color: white;">
+                                <option value="1">لمدة شهر واحد</option>
+                                <option value="6">لمدة 6 أشهر</option>
+                                <option value="12">لمدة سنة كاملة</option>
+                            </select>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <a href="javascript:void(0);" onclick="document.getElementById('orphanDetailModal_{{ orphan.id }}').style.display='block'" style="flex: 1; text-align: center; background: white; color: #2a756b; padding: 10px; border-radius: 8px; border: 2px solid #2a756b; text-decoration: none; font-weight: bold; transition: 0.2s; font-size: 0.9rem;">
+                                قراءة القصة
+                            </a>
+                            <button type="submit" style="flex: 1.5; background: #006dff; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.9rem;">
+                                <i class="fas fa-heart"></i> اكفل الآن
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -90,14 +107,24 @@
                         </div>
                         {% endif %}
                         <h3 style="color: #2a756b; margin-bottom: 15px; text-align: center; font-weight: bold;">{{ orphan.name }}</h3>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ddd; padding-bottom: 10px; margin-bottom: 10px;">
+                                <span><strong>العمر:</strong> {{ orphan.age }} سنة</span>
+                                <span><strong>الاحتياج الأهم:</strong> <span class="badge bg-warning text-dark">{{ orphan.get_sponsorship_need_display }}</span></span>
+                            </div>
                             <p style="margin: 0 0 10px 0; border-bottom: 1px dashed #ddd; padding-bottom: 5px;">
-                                <strong>تاريخ الميلاد:</strong> <span dir="ltr">{{ orphan.birth_date|date:"Y-m-d" }}</span> ({{ orphan.age }} سنة)</p>
+                                <strong>الحالة الاجتماعية:</strong> {{ orphan.social_status }}
+                            </p>
                             <p style="margin: 0 0 10px 0; border-bottom: 1px dashed #ddd; padding-bottom: 5px;">
-                                <strong>المرحلة الدراسية:</strong> {{ orphan.education_level|default:"غير محدد" }}</p>
-                            <p style="margin: 0 0 10px 0; border-bottom: 1px dashed #ddd; padding-bottom: 5px;">
-                                <strong>الحالة الصحية:</strong> {{ orphan.health_status }}</p>
-                            <p style="margin: 0;"><strong>نبذة:</strong> {{ orphan.story|default:"لا توجد تفاصيل إضافية مسجلة حالياً." }}</p>
+                                <strong>الحالة الصحية:</strong> {{ orphan.health_status }}
+                            </p>
+                            
+                            <div style="margin-top: 15px; background: white; padding: 12px; border-radius: 8px; border-right: 4px solid #D69E2E;">
+                                <strong style="color: #333;"><i class="fas fa-book-open"></i> قصة اليتيم:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 0.95rem; color: #555; line-height: 1.6;">
+                                    {{ orphan.story|default:"بانتظار إضافة تفاصيل القصة من قبل الإدارة لاستكمال الملف الإنساني لليتيم."|linebreaksbr }}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

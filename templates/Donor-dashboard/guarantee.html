@@ -56,20 +56,24 @@
 
                 <div class="sponsorship-actions"
                     style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center;">
+                    
                     <a href="javascript:void(0);"
                         onclick="document.getElementById('orphanModal_{{ sponsorship.id }}').style.display='block'"
-                        style="flex: 1; background: #eef2f6; color: #2a756b; padding: 8px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: 0.2s;">التفاصيل
-                        والملفات</a>
+                        style="flex: 1; background: #eef2f6; color: #2a756b; padding: 8px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: 0.2s;">
+                        <i class="fas fa-folder-open me-1"></i> التفاصيل والملفات
+                    </a>
 
-                    {% if sponsorship.status == 'Active' %}
+                    {% if sponsorship.status == 'Pending' %}
                     <form action="{% url 'initiate_sponsorship_payment' sponsorship.id %}" method="POST"
                         style="flex: 1; margin: 0;">
                         {% csrf_token %}
                         <button type="submit"
-                            style="width: 100%; background: #006dff; color: white; padding: 8px 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;">دفع
-                            الكفالة</button>
+                            style="width: 100%; background: #006dff; color: white; padding: 8px 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                            <i class="fas fa-credit-card me-1"></i> دفع الكفالة
+                        </button>
                     </form>
                     {% endif %}
+                    
                 </div>
             </div>
             {% empty %}

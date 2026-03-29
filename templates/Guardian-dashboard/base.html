@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}بوابة الوصي | كفالة{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" href="{% static 'img/1745048934591-pica.png' %}" type="image/png">
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <div class="d-flex all-bage">
+        <button id="sidebar-toggle" class="burger-btn">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <div id="sidebar" class="sidebar">
+            <div class="profile">
+                <a href="{% url 'guardian_dashboard' %}" style="text-decoration: none; color: inherit;">
+                    <div class="profile-img"> <img src="{% static 'img/1745048934591-pica.png' %}" alt="Logo"> كفالة </div>
+                </a>
+            </div>
+            <hr>
+            <div class="menu">
+                <a href="{% url 'guardian_dashboard' %}">
+                    <div class="menu-item {% if request.resolver_match.url_name == 'guardian_dashboard' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-home"></i></span>
+                        <span>الرئيسية</span>
+                    </div>
+                </a>
+
+                <a href="{% url 'guardian_my_orphans' %}">
+                    <div class="menu-item {% if request.resolver_match.url_name == 'guardian_orphans' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-users"></i></span>
+                        <span>أيتامي</span>
+                    </div>
+                </a>
+
+                <a href="{% url 'guardian_apply_orphan' %}">
+                    <div class="menu-item {% if request.resolver_match.url_name == 'register_orphan' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-user-plus"></i></span>
+                        <span>تسجيل يتيم جديد</span>
+                    </div>
+                </a>
+
+                <a href="{% url 'guardian_notifications' %}">
+                    <div class="menu-item {% if request.resolver_match.url_name == 'guardian_notifications' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-bell"></i></span>
+                        <span>الإشعارات</span>
+                    </div>
+                </a>
+            </div>
+            <hr>
+            <div>
+                <a href="{% url 'guardian_profile' %}">
+                    <div class="menu-item">
+                        <span class="menu-icon"><i class="fas fa-cog"></i></span><span>إعدادات الحساب</span>
+                    </div>
+                </a>
+                <a href="{% url 'logout_view' %}" style="text-decoration: none; color: inherit;">
+                    <div class="menu-item">
+                        <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span><span>تسجيل خروج</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="container">
+            <nav class="navbar">
+                <form class="search-container" action="#" method="GET">
+                    <button type="button"><i class="fas fa-search"></i></button>
+                    <input type="text" name="q" placeholder="ابحث...">
+                </form>
+
+                <div style="display: flex; align-items: center; position: relative;" class="ff1">
+                    
+                    <div class="bill" id="bellIcon" style="cursor: pointer; position: relative;">
+                        <i class="fas fa-bell fa-lg" style="color: #555; transition: 0.3s;" onmouseover="this.style.color='var(--primary-teal)'" onmouseout="this.style.color='#555'"></i>
+                        
+                        {% if unread_count and unread_count > 0 %}
+                        <span class="notification-badge shadow-sm" style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; border-radius: 50%; padding: 3px 6px; font-size: 0.7rem; font-weight: bold; border: 2px solid white;">
+                            {{ unread_count }}
+                        </span>
+                        {% endif %}
+
+                        <div class="notification-panel" id="notificationPanel" style="display: none; position: absolute; top: 120%; left: 0; background: white; border: 1px solid #eee; border-radius: 8px; width: 300px; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: default;">
+                            <h5 style="margin: 15px; color: #2a756b; font-weight: bold; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                                أحدث الإشعارات
+                                {% if unread_count and unread_count > 0 %}
+                                    <span class="badge bg-primary rounded-pill float-start" style="font-size: 0.7rem;">{{ unread_count }}</span>
+                                {% endif %}
+                            </h5>
+
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                {% for notif in unread_notifications|slice:":5" %}
+                                <a href="{{ notif.link|default:'#' }}" style="text-decoration: none;">
+                                    <div class="notification-item" style="padding: 10px 15px; border-bottom: 1px solid #eee; transition: background 0.2s; {% if not notif.is_read %}background-color: #f0f7ff;{% else %}background-color: #fff;{% endif %}" onmouseover="this.style.backgroundColor='#f9f9f9'" onmouseout="this.style.backgroundColor='{% if not notif.is_read %}#f0f7ff{% else %}#fff{% endif %}'">
+                                        <div class="notification-title" style="font-weight: bold; color: #333; font-size: 0.9rem;">
+                                            {% if notif.title %}{{ notif.title }}{% else %}{{ notif.message|default:"-"|truncatechars:40 }}{% endif %}
+                                        </div>
+                                        <div class="notification-message" style="font-size: 0.8rem; color: #555; margin: 5px 0;">
+                                            {% if notif.message %}{{ notif.message|truncatechars:45 }}{% else %}-{% endif %}
+                                        </div>
+                                        <div class="notification-time" style="font-size: 0.75rem; color: #999;" dir="ltr">
+                                            {{ notif.created_at|time:"h:i A" }} | {{ notif.created_at|date:"Y-m-d" }}
+                                        </div>
+                                    </div>
+                                </a>
+                                {% empty %}
+                                <div class="notification-item" style="padding: 15px; text-align: center; color: gray; font-size: 0.9rem;">
+                                    لا توجد إشعارات جديدة
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <a href="{% url 'notifications' %}" class="view-all-link" style="display: block; text-align: center; padding: 12px; font-size: 0.9rem; text-decoration: none; font-weight: bold; color: #2a756b; background: #f9f9f9; border-radius: 0 0 8px 8px; transition: 0.2s;">عرض كل الإشعارات</a>
+                        </div>
+                    </div>
+
+                    <div class="line-img" style="margin: 0 15px; border-left: 1px solid #ccc; height: 30px;"></div>
+
+                    <div class="logo" id="profileIcon" style="cursor: pointer; position: relative; display: flex; align-items: center; gap: 10px;">
+                        <img src="{% static 'img/Circle.png' %}" alt="Logo" height="40" style="border-radius: 50%;">
+                        <p class="img-name" style="margin: 0; line-height: 1.2;">{{ guardian.first_name }}<br><span style="font-size: 0.8rem; color: #777;">وصي</span></p>
+
+                        <div class="profile-panel" id="profilePanel" style="display: none; position: absolute; top: 120%; left: 0; background: white; border: 1px solid #eee; padding: 15px; z-index: 9999; width: 220px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: default;">
+                            <div class="profile-header" style="text-align: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 10px;">
+                                <img src="{% static 'img/Circle.png' %}" alt="صورة المستخدم" style="width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px;">
+                                <div class="profile-info">
+                                    <h4 style="margin: 0; font-size: 1.1rem; color: #333;">{{ guardian.first_name }}</h4>
+                                    <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #777;">حساب وصي</p>
+                                </div>
+                            </div>
+                            <a href="{% url 'guardian_profile' %}" style="text-decoration: none; color: #333; display: block; padding: 10px 0;">
+                                <div class="profile-details" style="transition: 0.2s;">
+                                    <p style="margin: 0; font-size: 0.95rem;"><i class="fas fa-cog" style="color: #2a756b; margin-left: 8px;"></i> إعدادات الحساب</p>
+                                </div>
+                            </a>
+                            <form action="{% url 'logout_view' %}" method="POST" style="margin: 0; margin-top: 5px;">
+                                {% csrf_token %}
+                                <button type="submit" class="logout-btn" style="width: 100%; cursor: pointer; background: #dc3545; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; transition: 0.2s;">
+                                    <i class="fas fa-sign-out-alt" style="margin-left: 8px;"></i> تسجيل الخروج
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            {% block content %}
+            {% endblock %}
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const bellIcon = document.getElementById('bellIcon');
+            const notificationPanel = document.getElementById('notificationPanel');
+            const profileIcon = document.getElementById('profileIcon');
+            const profilePanel = document.getElementById('profilePanel');
+
+            if (bellIcon && notificationPanel) {
+                bellIcon.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    notificationPanel.style.display = notificationPanel.style.display === 'block' ? 'none' : 'block';
+                    if (profilePanel) profilePanel.style.display = 'none'; 
+                });
+            }
+
+            if (profileIcon && profilePanel) {
+                profileIcon.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    profilePanel.style.display = profilePanel.style.display === 'block' ? 'none' : 'block';
+                    if (notificationPanel) notificationPanel.style.display = 'none'; 
+                });
+            }
+
+            document.addEventListener('click', function (e) {
+                if (notificationPanel && !notificationPanel.contains(e.target) && !bellIcon.contains(e.target)) {
+                    notificationPanel.style.display = 'none';
+                }
+                if (profilePanel && !profilePanel.contains(e.target) && !profileIcon.contains(e.target)) {
+                    profilePanel.style.display = 'none';
+                }
+            });
+
+            if (notificationPanel) notificationPanel.addEventListener('click', e => e.stopPropagation());
+            if (profilePanel) profilePanel.addEventListener('click', e => e.stopPropagation());
+        });
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+
+    <script src="{% static 'js/bootstrap.bundle.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

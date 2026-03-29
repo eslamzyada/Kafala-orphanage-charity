@@ -38,7 +38,7 @@
                         مستمرة
                         {% endif %}
                     </td>
-                    <td data-label="آخر دفعة">--</td>
+                    <td>{{ sponsorship.last_payment_date|date:"Y/m/d"|default:"--" }}</td>
                 </tr>
                 {% empty %}
                 <tr>

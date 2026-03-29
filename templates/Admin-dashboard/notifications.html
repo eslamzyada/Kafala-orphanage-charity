@@ -1,81 +1,91 @@
 {% extends 'Admin-dashboard/base.html' %}
 {% load static %}
 
-{% block title %}الإشعارات | كفالة{% endblock %}
+{% block title %}سجل إشعارات النظام | كفالة{% endblock %}
 
 {% block content %}
-<div class="not-head">
-    <p class="title-guarantee">الإشعارات الواردة</p>
+<div class="not-head d-flex justify-content-between align-items-center mb-4">
+    <p class="title-guarantee mb-0" style="color: var(--primary-teal); font-weight: bold; font-size: 1.5rem;">
+        <i class="fas fa-history me-2"></i> سجل إشعارات النظام
+    </p>
 
-    <div class="search-eara">
-        <div type="submit">
-            <input type="text" id="searchInput" placeholder="ابحث في محتوى الإشعار..." onkeyup="filterNotifications()">
+    <div class="d-flex gap-3 align-items-center">
+        <div class="search-eara position-relative">
+            <input type="text" id="searchInput" class="form-control rounded-pill pe-4" placeholder="ابحث في السجل..." onkeyup="filterNotifications()" style="width: 250px; border: 1px solid #ddd;">
+            <i class="fas fa-search position-absolute" style="left: 15px; top: 50%; transform: translateY(-50%); color: #aaa;"></i>
         </div>
-        <select id="sourceFilter" class="select-list-header" onchange="filterNotifications()">
-            <option value="">كل المصادر</option>
-            <option value="sponsor">الكافل</option>
-            <option value="system">النظام</option>
-        </select>
-    </div>
+        </div>
 </div>
 
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show fw-bold" role="alert" style="border-radius: 10px;">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
 <div class="notifications-container">
-    <div class="card-body table-responsive" style="max-width: 90%; margin-right: 15px;">
-        <table class="table table-hover text-wrap table-lg notifications-table"
-            style="border-radius: 10px; overflow: hidden;">
-            <thead>
+    <div class="card-body table-responsive" style="background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px;">
+        <table class="table table-hover text-wrap table-lg notifications-table mb-0">
+            <thead style="color: #2a756b !important;">
                 <tr>
-                    <th class="status-col">الحالة</th>
-                    <th class="content-col">محتوى الإشعار</th>
-                    <th class="source-col">المصدر</th>
+                    <th class="status-col text-center">حالة المستلم</th>
+                    <th class="recipient-col">المُستلِم</th> <th class="content-col">محتوى الإشعار</th>
                     <th class="date-col">التاريخ</th>
-                    <th class="time-col">الوقت</th>
-                    <th class="actions-col">الإجراءات</th>
+                    <th class="actions-col text-center">الإجراءات</th>
                 </tr>
             </thead>
             <tbody>
                 {% for notification in notifications %}
-                <tr class="notif-row {% if not notification.is_read %}table-active{% endif %}">
-                    <td data-label="الحالة">
-                        <span class="status-indicator {% if notification.is_read %}old{% else %}new{% endif %}"></span>
-                    </td>
-                    <td data-label="محتوى الإشعار" class="notif-content">
-                        <div class="content-wrapper">
-                            {{ notification.title|default:notification.message|truncatechars:40 }}
-                        </div>
-                    </td>
-                    <td data-label="المصدر" class="notif-source">
-                        {{ notification.source|default:"النظام" }}
-                    </td>
-                    <td data-label="التاريخ" class="notification-date">{{ notification.created_at|date:"Y/m/d" }}</td>
-                    <td data-label="الوقت" class="notification-time">{{ notification.created_at|date:"h:i a" }}</td>
-
-                    <td class="stutes">
-                        <a href="javascript:void(0);"
-                            style="background-color: #7b7e85; color: white; padding: 5px 15px; border-radius: 5px; text-decoration: none;"
-                            onclick="document.getElementById('notificationModal_{{ notification.id }}').style.display='block'">عرض</a>
-
+                <tr class="notif-row" style="transition: 0.3s;">
+                    <td class="text-center align-middle">
                         {% if not notification.is_read %}
-                        <form method="POST" action="{% url 'mark_admin_notif_read' notification.id %}"
-                            style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="accept-guarantee"
-                                style="border:none; cursor:pointer;">قبول</button>
-                        </form>
+                            <span class="badge bg-warning text-dark rounded-pill" title="لم يقم المستخدم بقراءته بعد">لم تُقرأ</span>
+                        {% else %}
+                            <span class="badge bg-success rounded-pill" title="قام المستخدم بقراءته">قُرئت</span>
                         {% endif %}
+                    </td>
+                    <td class="recipient-col align-middle fw-bold" style="color: #2a756b;">
+                        {% if notification.recipient %}
+                            {{ notification.recipient.get_full_name|default:notification.recipient.username }}
+                        {% else %}
+                            غير محدد / النظام
+                        {% endif %}
+                    </td>
+                    <td class="notif-content align-middle">
+                        <div class="content-wrapper fw-bold" style="color: #444;">
+                            {{ notification.title|default:"إشعار نظام" }}
+                        </div>
+                        <small class="text-muted">{{ notification.message|truncatechars:40 }}</small>
+                    </td>
+                    <td class="notification-date align-middle" dir="ltr">
+                        {{ notification.created_at|date:"Y/m/d" }} <br>
+                        <small class="text-muted">{{ notification.created_at|date:"h:i A" }}</small>
+                    </td>
 
-                        <form method="POST" action="{% url 'delete_admin_notif' notification.id %}"
-                            style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="delete-orphan" style="border:none; cursor:pointer;"
-                                onclick="return confirm('هل أنت متأكد من حذف هذا الإشعار؟')">حذف</button>
-                        </form>
+                    <td class="stutes align-middle text-center">
+                        <div class="d-flex justify-content-center gap-2">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('notificationModal_{{ notification.id }}').style.display='block'">
+                                <i class="fas fa-eye"></i> تفاصيل
+                            </button>
+
+                            <form method="POST" action="{% url 'delete_notification' notification.id %}" style="margin:0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من حذف هذا السجل من النظام؟')">
+                                    <i class="fas fa-trash-alt"></i> حذف
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center" style="padding: 40px; color: #777; font-weight: bold;">لا توجد
-                        إشعارات واردة حتى الآن.</td>
+                    <td colspan="5" class="text-center py-5">
+                        <i class="far fa-folder-open fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted fw-bold">سجل الإشعارات فارغ حالياً.</h5>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -84,53 +94,45 @@
 </div>
 
 {% for notification in notifications %}
-<div id="notificationModal_{{ notification.id }}" class="modalshow"
-    style="display: none; position: fixed; z-index: 999999; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(0,0,0,0.6); overflow-y: auto;">
-    <div
-        style="background-color: white; width: 90%; max-width: 550px; margin: 10vh auto; border-radius: 12px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.4); position: relative; direction: rtl; text-align: right; overflow: hidden;">
+<div id="notificationModal_{{ notification.id }}" class="modalshow" style="display: none; position: fixed; z-index: 999999; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(0,0,0,0.6); overflow-y: auto;">
+    <div style="background-color: white; width: 90%; max-width: 550px; margin: 10vh auto; border-radius: 12px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.4); position: relative; direction: rtl; text-align: right; overflow: hidden;">
 
-        <div
-            style="background-color: #2a756b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
-            <h4 style="margin: 0; font-weight: bold; font-size: 1.2rem;">تفاصيل الإشعار</h4>
-            <span onclick="document.getElementById('notificationModal_{{ notification.id }}').style.display='none'"
-                style="cursor: pointer; font-size: 28px; line-height: 1;">&times;</span>
+        <div style="background-color: #2a756b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; font-weight: bold; font-size: 1.2rem;"><i class="fas fa-list-alt me-2"></i> سجل النظام</h4>
+            <span onclick="document.getElementById('notificationModal_{{ notification.id }}').style.display='none'" style="cursor: pointer; font-size: 28px; line-height: 1;">&times;</span>
         </div>
 
         <div style="padding: 25px; color: #333;">
-            <p style="margin-bottom: 20px; font-size: 1.1rem;">
-                <strong style="color: #2a756b;">عنوان الإشعار:</strong>
-                <span style="color: #444;">{{ notification.title|default:"بدون عنوان" }}</span>
-            </p>
+            <h4 style="color: #2a756b; font-weight: bold; margin-bottom: 15px;">{{ notification.title|default:"بدون عنوان" }}</h4>
 
-            <div
-                style="display: flex; gap: 20px; margin-bottom: 20px; font-size: 0.95rem; color: #666; flex-wrap: wrap;">
-                <p style="margin: 0;"><strong>المصدر:</strong> {{ notification.source|default:"النظام" }}</p>
-                <p style="margin: 0;"><strong>تاريخ الاستلام:</strong> <span dir="ltr">{{ notification.created_at|date:'Y-m-d' }} | {{ notification.created_at|time:'g:i A' }}</span></p>
+            <div style="display: flex; gap: 20px; margin-bottom: 20px; font-size: 0.95rem; color: #666; flex-wrap: wrap; border-bottom: 1px dashed #eee; padding-bottom: 15px;">
+                <p style="margin: 0;"><strong>المُرسل إليه:</strong> 
+                    <span class="badge bg-info text-dark">
+                        {% if notification.recipient %}
+                            {{ notification.recipient.username }}
+                        {% else %}
+                            إشعار نظام عام
+                        {% endif %}
+                    </span>
+                </p>
+                <p style="margin: 0;"><strong>وقت الإرسال:</strong> <span dir="ltr">{{ notification.created_at|date:'Y-m-d g:i A' }}</span></p>
+                <p style="margin: 0;">
+                    <strong>حالة القراءة:</strong>
+                    {% if notification.is_read %}
+                        <span class="badge bg-success">تمت القراءة</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">لم تُقرأ بعد</span>
+                    {% endif %}
+                </p>
             </div>
 
-            <p style="margin-bottom: 20px;">
-                <strong style="color: #2a756b;">الحالة:</strong>
-                <span
-                    style="display: inline-block; background-color: {% if notification.is_read %}#68AF73{% else %}#006dff{% endif %}; padding: 5px 15px; border-radius: 20px; color: white; font-size: 0.85rem; margin-right: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                    {% if notification.is_read %}مقروءة{% else %}غير مقروءة{% endif %}
-                </span>
-            </p>
-
-            <div
-                style="background-color: #f4f6f9; border-right: 4px solid #2a756b; padding: 20px; border-radius: 5px; margin-top: 25px;">
-                <p style="margin: 0; line-height: 1.7; font-size: 1rem; color: #333;">{{ notification.message }}</p>
+            <div style="background-color: #f8f9fa; border-right: 4px solid #2a756b; padding: 20px; border-radius: 5px;">
+                <p style="margin: 0; line-height: 1.7; font-size: 1.05rem; color: #444;">{{ notification.message }}</p>
             </div>
 
-            {% if not notification.is_read %}
-            <div style="margin-top: 25px; text-align: left;">
-                <form method="POST" action="{% url 'mark_admin_notif_read' notification.id %}" style="margin:0;">
-                    {% csrf_token %}
-                    <button type="submit"
-                        style="background-color: #2a756b; color: white; padding: 10px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">تحديد
-                        كمقروء &check;</button>
-                </form>
+            <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('notificationModal_{{ notification.id }}').style.display='none'">إغلاق</button>
             </div>
-            {% endif %}
         </div>
     </div>
 </div>
@@ -145,29 +147,24 @@
 
     function filterNotifications() {
         let searchValue = normalizeArabic(document.getElementById("searchInput").value);
-        let sourceValue = document.getElementById("sourceFilter").value;
-
         let rows = document.querySelectorAll(".notif-row");
 
         rows.forEach(row => {
-            let content = normalizeArabic(row.querySelector(".notif-content").innerText);
-            let source = normalizeArabic(row.querySelector(".notif-source").innerText);
-
+            let content = normalizeArabic(row.innerText);
             let matchesSearch = content.includes(searchValue);
 
-            let matchesSource = true;
-            if (sourceValue === 'system') {
-                matchesSource = source.includes('system') || source.includes('نظام');
-            } else if (sourceValue === 'sponsor') {
-                matchesSource = source.includes('sponsor') || source.includes('donor') || source.includes('كافل');
-            }
-
-            if (matchesSearch && matchesSource) {
+            if (matchesSearch) {
                 row.style.display = "";
             } else {
                 row.style.display = "none";
             }
         });
+    }
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modalshow')) {
+            event.target.style.display = "none";
+        }
     }
 </script>
 {% endblock %}

@@ -1,7 +1,10 @@
 import stripe
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import logout
-from .models import Orphan, Donor, Sponsorship, Payment, Notification, Document, Guardian
+
+from core.utils import run_sponsorship_checkups
+from .models import Orphan, Donor, Sponsorship, Payment, Notification, Guardian, OrphanDocument
+from .decorators import guardian_required
 import json
 from django.contrib import messages
 from django.db.models import Count
@@ -20,6 +23,9 @@ from django.http import HttpResponse, JsonResponse
 import requests
 import os
 from django.db import transaction
+from datetime import timedelta
+from django.utils import timezone
+from .utils import send_notification
 
 
 
@@ -114,6 +120,15 @@ def kafala_ai_assistant(request):
     return JsonResponse({'status': 'invalid_request'})
 # ============= HELPER FUNCTIONS =============
 
+def send_notification(user, title, message, link="#"):
+    """دالة مركزية لإرسال الإشعارات لأي مستخدم في النظام"""
+    Notification.objects.create(
+        recipient=user,
+        title=title,
+        message=message,
+        link=link
+    )
+
 def _save_document_for_orphan(orphan, uploaded_file, title, description):
     cleaned_title = (title or "").strip()
     if not cleaned_title:
@@ -156,7 +171,6 @@ def login_view(request):
         print(f"DEBUG: Form submitted! Trying to log in as -> Username: '{u}'")
         
         user = authenticate(request, username=u, password=p)
-        
         print(f"DEBUG: Did Django find this user in the database? -> {user}")
         
         if user is not None:
@@ -166,15 +180,19 @@ def login_view(request):
             if user.is_superuser:
                 return redirect('admin_dashboard') 
                 
-            elif Donor.objects.filter(email=user.email).exists():
+            elif hasattr(user, 'donor_profile') or Donor.objects.filter(email=user.email).exists():
                 return redirect('sponsor_dashboard')
                 
-            elif Orphan.objects.filter(username=user.username).exists():
+            elif hasattr(user, 'guardian'):
+                return redirect('guardian_dashboard')
+                
+            elif hasattr(user, 'orphan_profile') or Orphan.objects.filter(user=user).exists():
                 return redirect('orphan_dashboard')
                 
             else:
-                messages.error(request, "تم تسجيل الدخول، ولكن حسابك غير مسجل ككفيل أو يتيم.")
+                messages.error(request, "تم تسجيل الدخول، ولكن حسابك غير مسجل ككفيل، وصي، أو يتيم.")
                 return redirect('index')
+                
         else:
             messages.error(request, "اسم المستخدم أو كلمة المرور غير صحيحة.")
             return redirect('index')
@@ -258,7 +276,61 @@ def register_view(request):
                     return redirect('index')
                     
         return redirect('index')
-                    
+
+# =================================================================
+#                 GUARDIAN REGISTRATION VIEW
+# =================================================================
+def guardian_register(request):
+    """
+    Public registration flow for Guardians.
+    Handles GET (render form) and POST (process registration).
+    Uses transaction.atomic to ensure data integrity.
+    """
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'guardian'):
+            return redirect('guardian_dashboard')
+        elif request.user.is_superuser:
+            return redirect('admin_dashboard')
+        elif hasattr(request.user, 'donor_profile'):
+            return redirect('sponsor_dashboard')
+        else:
+            return redirect('index')
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        id_number = request.POST.get('id_number', '').strip() 
+        password = request.POST.get('password', '')
+
+        if not (name and id_number and password):
+            messages.error(request, 'يرجى تعبئة جميع الحقول الإلزامية.')
+            return render(request, 'landing/guardian_register.html')
+
+        if not id_number.isdigit() or len(id_number) != 9:
+            messages.error(request, 'عذراً، رقم الهوية غير صحيح. يجب أن يتكون من 9 أرقام فقط.')
+            return render(request, 'landing/guardian_register.html')
+
+        if User.objects.filter(username=id_number).exists():
+            messages.error(request, 'عذراً، رقم الهوية هذا مسجل مسبقاً في النظام.')
+            return render(request, 'landing/guardian_register.html')
+
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(username=id_number, password=password)
+                guardian = Guardian.objects.create(
+                    user=user,
+                    name=name,
+                    phone=phone,
+                    id_number=id_number, 
+                    is_approved=False 
+                )
+            messages.success(request, 'تم تسجيل حساب الوصي بنجاح! يمكنك الآن تسجيل الدخول باستخدام رقم الهوية.')
+            return redirect('index')  
+        except Exception as e:
+            messages.error(request, 'حدث خطأ غير متوقع أثناء التسجيل. الرجاء المحاولة مرة أخرى.')
+            return render(request, 'landing/guardian_register.html')
+
+    return render(request, 'landing/guardian_register.html')
 
 def logout_view(request):
     logout(request)
@@ -316,20 +388,23 @@ def manage_orphans(request):
     })
 
 @login_required(login_url='index')
-def approve_orphan_request(request, orphan_id):
-    if not request.user.is_superuser or request.method != 'POST':
-        return redirect('manage_orphans')
-    
+def approve_orphan(request, orphan_id):
+    if not request.user.is_superuser:
+        return redirect('index')
+        
     orphan = get_object_or_404(Orphan, id=orphan_id)
-    
-    orphan.sponsorship_status = 'Available'
+    orphan.sponsorship_status = 'Available' 
     orphan.save()
     
-    if orphan.guardian:
-        orphan.guardian.is_approved = True
-        orphan.guardian.save()
+    if hasattr(orphan, 'guardian') and orphan.guardian:
+        send_notification(
+            user=orphan.guardian.user,
+            title="تمت الموافقة على طلبك",
+            message=f"تمت مراجعة طلب تسجيل اليتيم ({orphan.name}) بنجاح وهو الآن متاح للكفالة.",
+            link="/guardian/my-orphans/"
+        )
         
-    messages.success(request, f'تم اعتماد اليتيم {orphan.name} بنجاح، وهو الآن متاح للمتبرعين.')
+    messages.success(request, 'تمت الموافقة بنجاح.')
     return redirect('manage_orphans')
 
 @login_required(login_url='index')
@@ -339,6 +414,14 @@ def reject_orphan_request(request, orphan_id):
         
     orphan = get_object_or_404(Orphan, id=orphan_id)
     guardian = orphan.guardian
+    
+    if guardian:
+        send_notification(
+            user=guardian.user,
+            title="رفض طلب تسجيل",
+            message=f"نأسف، تم رفض طلب تسجيل اليتيم ({orphan.name}). يرجى مراجعة الإدارة.",
+            link="/guardian/dashboard/"
+        )
     
     orphan.delete()
     
@@ -362,9 +445,8 @@ def add_orphan(request):
         new_g_username = request.POST.get('new_g_username')
         new_g_password = request.POST.get('new_g_password')
 
-        
         if guardian_choice == 'new' and username == new_g_username:
-            messages.error(request, "خطأ: لا يمكن استخدام نفس اسم المستخدم لليتيم والوصي. يرجى اختيار أسماء مختلفة.")
+            messages.error(request, "خطأ: لا يمكن استخدام نفس اسم المستخدم لليتيم والوصي.")
             return redirect('add_orphan') 
 
         if User.objects.filter(username=username).exists():
@@ -374,7 +456,6 @@ def add_orphan(request):
         if guardian_choice == 'new' and User.objects.filter(username=new_g_username).exists():
             messages.error(request, f"خطأ: اسم المستخدم للوصي ({new_g_username}) محجوز مسبقاً.")
             return redirect('add_orphan')
-
 
         try:
             with transaction.atomic():
@@ -395,7 +476,7 @@ def add_orphan(request):
                 orphan_user = User.objects.create_user(username=username, password=password)
                 
                 orphan = Orphan.objects.create(
-                    user=orphan_user,
+                    user=orphan_user,   
                     username=username, 
                     name=name,         
                     age=request.POST.get('age'),
@@ -403,13 +484,21 @@ def add_orphan(request):
                     area=request.POST.get('area'),
                     health_status=request.POST.get('health_status'),
                     social_status=request.POST.get('social_status'),
-                    guardian=guardian,
+                    guardian=guardian,    
                     sponsorship_status='Pending'
                 )
                 
                 if 'image' in request.FILES:
                     orphan.image = request.FILES['image']
                     orphan.save()
+                    admins = User.objects.filter(is_superuser=True)
+                    for admin in admins:
+                        send_notification(
+                            user=admin,
+                            title="طلب كفالة يتيم جديد 👶",
+                            message=f"قام الوصي بتسجيل يتيم جديد باسم ({orphan.name}) وهو بانتظار المراجعة والموافقة.",
+                            link=f"/admin-orphan-details/{orphan.id}/" 
+                        )
                     
                 if 'document' in request.FILES:
                     try:
@@ -422,7 +511,7 @@ def add_orphan(request):
                     except ValidationError:
                         pass
                 
-                messages.success(request, "تمت إضافة اليتيم والوصي بنجاح!")
+                messages.success(request, "تمت إضافة اليتيم والوصي بنجاح! يمكن لليتيم تسجيل الدخول الآن.")
                 return redirect('manage_orphans')
 
         except Exception as e:
@@ -439,17 +528,27 @@ def admin_orphan_details(request, orphan_id):
     
     orphan = get_object_or_404(Orphan, id=orphan_id)
     guardian = orphan.guardian 
-    documents = orphan.documents.all()
+    
+    documents = orphan.sponsor_documents.all().order_by('-uploaded_at')
     sponsorships = orphan.sponsorships.all()
-    upload_error = None
     
     if request.method == 'POST':
+        
         if 'edit_orphan' in request.POST:
             orphan.name = request.POST.get('name', orphan.name)
             orphan.age = request.POST.get('age', orphan.age)
             orphan.area = request.POST.get('area', orphan.area)
             orphan.social_status = request.POST.get('social_status', orphan.social_status)
             orphan.health_status = request.POST.get('health_status', orphan.health_status)
+            
+            orphan.sponsorship_status = request.POST.get('sponsorship_status', orphan.sponsorship_status)
+            orphan.sponsorship_need = request.POST.get('sponsorship_need', orphan.sponsorship_need)
+            orphan.story = request.POST.get('story', orphan.story)
+            
+            if 'birth_certificate' in request.FILES:
+                orphan.birth_certificate = request.FILES['birth_certificate']
+            if 'death_certificate' in request.FILES:
+                orphan.death_certificate = request.FILES['death_certificate']
             orphan.save()
 
             if guardian:
@@ -458,37 +557,61 @@ def admin_orphan_details(request, orphan_id):
                 guardian.phone = request.POST.get('guardian_phone', guardian.phone)
                 guardian.payout_method = request.POST.get('payout_method', guardian.payout_method)
                 guardian.payout_details = request.POST.get('payout_details', guardian.payout_details)
+                
+                new_email = request.POST.get('guardian_email')
+                if new_email and guardian.user:
+                    guardian.user.email = new_email
+                    guardian.user.save()
+                
+                if 'id_document' in request.FILES:
+                    guardian.id_document = request.FILES['id_document']
                 guardian.save()
-                guardian.user.email = request.POST.get('guardian_email', guardian.user.email)
-                guardian.user.save()
-            messages.success(request, 'تم تحديث البيانات بنجاح.')
+                
+            messages.success(request, 'تم تحديث بيانات اليتيم والوصي بنجاح.')
             return redirect('admin_orphan_details', orphan_id=orphan.id)
-        
+
         elif 'upload_document' in request.POST:
-            uploaded_file = request.FILES.get('document_file')
-            if not uploaded_file:
-                upload_error = "لم يتم رفع أي ملف."
-            else:
-                try:
-                    _save_document_for_orphan(
-                        orphan,
-                        uploaded_file,
-                        request.POST.get('document_title', 'وثيقة بدون عنوان'),
-                        request.POST.get('document_desc', ''),
-                    )
-                except ValidationError as exc:
-                    upload_error = " ".join(exc.messages)
-            if not upload_error:
-                return redirect('admin_orphan_details', orphan_id=orphan.id)
+            doc_title = request.POST.get('title')
+            doc_file = request.FILES.get('document')
+            is_public = request.POST.get('is_public') == 'on' 
             
+            if doc_title and doc_file:
+                OrphanDocument.objects.create(
+                    orphan=orphan,
+                    title=doc_title,
+                    document=doc_file,
+                    document_type='Other',
+                    is_public=is_public 
+                )
+                messages.success(request, 'تم رفع الوثيقة الإضافية بنجاح.')
+            else:
+                messages.error(request, 'حدث خطأ. يرجى التأكد من إرفاق الملف وكتابة العنوان.')
+                
+            return redirect('admin_orphan_details', orphan_id=orphan.id)
+
+        elif 'toggle_core_doc' in request.POST:
+            doc_type = request.POST.get('toggle_core_doc')
+            
+            if doc_type == 'birth':
+                orphan.is_birth_cert_public = not orphan.is_birth_cert_public
+                orphan.save()
+            elif doc_type == 'death':
+                orphan.is_death_cert_public = not orphan.is_death_cert_public
+                orphan.save()
+            elif doc_type == 'guardian_id' and guardian:
+                guardian.is_id_public = not guardian.is_id_public
+                guardian.save()
+                
+            messages.success(request, 'تم تحديث حالة ظهور الوثيقة للكافل بنجاح.')
+            return redirect('admin_orphan_details', orphan_id=orphan.id)
+
     context = {
         'orphan': orphan,
-        'guardian': guardian, 
-        'documents': documents,
-        'sponsorships': sponsorships,
-        'upload_error': upload_error,
+        'guardian': guardian,
+        'documents': documents, 
+        'sponsorships': sponsorships
     }
-    return render(request, 'Admin-dashboard/ShowOrphan.html', context)
+    return render(request, 'Admin-dashboard/showOrphan.html', context)
 
 @login_required(login_url='index')
 def delete_orphan(request, orphan_id):
@@ -619,11 +742,9 @@ def create_stripe_checkout_session(request, payment_id):
             mode='payment',
             client_reference_id=str(payment.pk), 
             success_url=request.build_absolute_uri(reverse('donor_payments')) + '?success=true',
-            # استخدام pk بدلاً من id
             cancel_url=request.build_absolute_uri(reverse('pay_checkout', args=[payment.pk])) + '?canceled=true',
         )
         
-        # التأكد من وجود الرابط لإرضاء Pylance ومنع أي أخطاء مفاجئة
         if checkout_session.url:
             return redirect(checkout_session.url)
         else:
@@ -634,6 +755,75 @@ def create_stripe_checkout_session(request, payment_id):
         print(f"STRIPE ERROR: {str(e)}")
         messages.error(request, "حدث خطأ أثناء الاتصال ببوابة الدفع. يرجى المحاولة لاحقاً.")
         return redirect('donor_payments')
+    
+@login_required
+def donor_dashboard(request):
+    donor = get_object_or_404(Donor, user=request.user)
+    
+    try:
+        run_sponsorship_checkups(request.user)
+    except Exception as e:
+        print(f"Error in background check: {e}")
+
+    sponsored_count = Sponsorship.objects.filter(donor=donor, status='Active').count()
+    available_count = Orphan.objects.filter(sponsorship_status='Available').count()
+    
+    context = {
+        'donor': donor,
+        'sponsored_count': sponsored_count,
+        'available_count': available_count,
+    }
+    return render(request, 'Donor-dashboard/dashboard.html', context)
+
+@login_required
+def approve_sponsorship(request, sponsorship_id):
+    """دالة موافقة الأدمن على طلب الكفالة"""
+    if not request.user.is_superuser:
+        return redirect('index')
+    
+    sponsorship = get_object_or_404(Sponsorship, id=sponsorship_id)
+    sponsorship.status = 'Active'
+    sponsorship.save()
+    
+    orphan = sponsorship.orphan
+    orphan.sponsorship_status = 'Sponsored'
+    orphan.save()
+    
+    send_notification(
+        user=sponsorship.donor.user,
+        title="مبارك! تمت الموافقة على الكفالة",
+        message=f"تمت الموافقة على كفالتك لليتيم ({orphan.name}). شكراً لعطائك.",
+        link="/donor/my-sponsorships/"
+    )
+    
+    messages.success(request, "تم تفعيل الكفالة بنجاح.")
+    return redirect('manage_sponsorships')
+
+@login_required
+def reject_sponsorship(request, sponsorship_id):
+    """دالة رفض طلب الكفالة من قبل الإدارة مع إرسال إشعار للكافل"""
+    if not request.user.is_superuser:
+        return redirect('index')
+    
+    sponsorship = get_object_or_404(Sponsorship, id=sponsorship_id)
+    donor_user = sponsorship.donor.user
+    orphan_name = sponsorship.orphan.name
+    
+    sponsorship.status = 'Canceled'
+    sponsorship.save()
+    
+    sponsorship.orphan.sponsorship_status = 'Available'
+    sponsorship.orphan.save()
+    
+    send_notification(
+        user=donor_user,
+        title="تحديث بخصوص طلب الكفالة",
+        message=f"نعتذر منك، لم تتم الموافقة على طلب كفالة اليتيم ({orphan_name}) في الوقت الحالي. يمكنك التواصل مع الإدارة لمزيد من التفاصيل.",
+        link="/donor/dashboard/"
+    )
+    
+    messages.warning(request, f"تم رفض طلب الكفالة لليتيم {orphan_name} وإشعار الكافل.")
+    return redirect('admin_sponsorship_requests') 
 
 @login_required(login_url='index')
 def notifications_view(request):
@@ -662,30 +852,43 @@ def edit_profile(request):
         
     return render(request, 'Admin-dashboard/editProfile.html')
 
-# ================= SPONSORSHIP ACTION VIEWS =================
-
 @login_required(login_url='index')
 def accept_sponsorship(request, spon_id):
     if not request.user.is_superuser or request.method != 'POST':
         return redirect('manage_sponsorships')
     
     spon = get_object_or_404(Sponsorship, id=spon_id)
+    
     spon.status = 'Active'
     spon.save()
     
-    # Update the Orphan's status to Sponsored
     spon.orphan.sponsorship_status = 'Sponsored'
     spon.orphan.save()
+
+    if spon.orphan.user:
+        send_notification(
+            user=spon.orphan.user,
+            title="مبارك! أصبح لديك كافل 🎉",
+            message=f"لقد تم تعيين كفالة جديدة لك بنجاح، يمكنك تفقد السجل المالي الآن.",
+            link="/orphan-dashboard/"
+        )
+
+    send_notification(
+        user=spon.donor.user,
+        title="تم تفعيل كفالتك ✅",
+        message=f"لقد وافقت الإدارة على كفالتك لليتيم {spon.orphan.name}. جزاك الله خيراً.",
+        link="/donor-dashboard/"
+    )
+    
+    pending_payment = spon.payments.filter(status='Pending').first()
+    if pending_payment:
+        pending_payment.status = 'Completed'
+        pending_payment.save()
     
     return redirect('manage_sponsorships')
 
-@login_required(login_url='index')
-def reject_sponsorship(request, spon_id):
-    if not request.user.is_superuser or request.method != 'POST':
-        return redirect('manage_sponsorships')
     
     spon = get_object_or_404(Sponsorship, id=spon_id)
-    # Rejecting just deletes the pending request to keep the database clean
     spon.delete() 
     
     return redirect('manage_sponsorships')
@@ -699,7 +902,6 @@ def end_sponsorship(request, spon_id):
     spon.status = 'Ended'
     spon.save()
     
-    # Free up the orphan so they can be sponsored again
     if not Sponsorship.objects.filter(orphan=spon.orphan, status='Active').exists():
         spon.orphan.sponsorship_status = 'Available'
         spon.orphan.save()
@@ -713,9 +915,8 @@ def renew_sponsorship(request, spon_id):
     
     spon = get_object_or_404(Sponsorship, id=spon_id)
     spon.status = 'Active'
-    spon.save()
+    spon.save() 
     
-    # Ensure Orphan is marked as Sponsored again
     spon.orphan.sponsorship_status = 'Sponsored'
     spon.orphan.save()
     
@@ -730,7 +931,6 @@ def delete_sponsorship(request, spon_id):
     orphan = spon.orphan
     spon.delete()
     
-    # Double check if the orphan needs to be marked as available
     if not Sponsorship.objects.filter(orphan=orphan, status='Active').exists():
         orphan.sponsorship_status = 'Available'
         orphan.save()
@@ -743,22 +943,21 @@ def delete_sponsorship(request, spon_id):
 @login_required(login_url='index')
 def orphan_dashboard(request):
     try:
-        orphan = Orphan.objects.get(username=request.user.username)
+        orphan = Orphan.objects.get(user=request.user)
         sponsorship = Sponsorship.objects.filter(orphan=orphan, status='Active').first()
-        unread_count = Notification.objects.filter(orphan=orphan, is_read=False).count()
-        recent_notifications = Notification.objects.filter(orphan=orphan).order_by('-created_at')[:5]
     except Orphan.DoesNotExist:
-        orphan, sponsorship, unread_count, recent_notifications = None, None, 0, []
+        messages.error(request, 'عذراً، لا يوجد ملف يتيم مرتبط بهذا الحساب.')
+        return redirect('index')
 
     context = {
-        'orphan': orphan, 'sponsorship': sponsorship, 
-        'unread_count': unread_count, 'recent_notifications': recent_notifications
+        'orphan': orphan, 
+        'sponsorship': sponsorship, 
     }
     return render(request, 'Orphan-dashboard/dashboard.html', context)
 
 @login_required(login_url='index')
 def orphan_profile(request):
-    orphan = get_object_or_404(Orphan, username=request.user.username)
+    orphan = get_object_or_404(Orphan, user=request.user)
     guardian = orphan.guardian 
     
     context = {
@@ -767,77 +966,33 @@ def orphan_profile(request):
     }
     return render(request, 'Orphan-dashboard/detailesOrphan.html', context)
 
-@login_required(login_url='index')
-def orphan_documents(request):
-    try:
-        orphan = Orphan.objects.get(username=request.user.username)
-        unread_count = Notification.objects.filter(orphan=orphan, is_read=False).count()
-        recent_notifications = Notification.objects.filter(orphan=orphan).order_by('-created_at')[:5]
-    except Orphan.DoesNotExist:
-        orphan, unread_count, recent_notifications = None, 0, []
-    
-    upload_error = None
-    if request.method == 'POST':
-        if not orphan:
-            return redirect('index')
-        uploaded_file = request.FILES.get('file')
-        if not uploaded_file:
-            upload_error = "No file uploaded."
-        else:
-            try:
-                _save_document_for_orphan(
-                    orphan,
-                    uploaded_file,
-                    request.POST.get('title'),
-                    request.POST.get('description'),
-                )
-                return redirect('orphan_documents')
-            except ValidationError as exc:
-                upload_error = " ".join(exc.messages)
-                
-    # FIXED: Added the documents query so your HTML table actually has data!
-    documents = orphan.documents.all() if orphan else []
-        
-    return render(request, 'Orphan-dashboard/documents.html', {
-        'orphan': orphan,
-        'unread_count': unread_count,
-        'recent_notifications': recent_notifications,
-        'upload_error': upload_error,
-        'documents': documents,
-    })
 
 @login_required(login_url='index')
 def orphan_sponsorships(request):
-    try:
-        orphan = Orphan.objects.get(username=request.user.username)
-        unread_count = Notification.objects.filter(orphan=orphan, is_read=False).count()
-        recent_notifications = Notification.objects.filter(orphan=orphan).order_by('-created_at')[:5]
-    except Orphan.DoesNotExist:
-        orphan, unread_count, recent_notifications = None, 0, []
-        
-    return render(request, 'Orphan-dashboard/Myguarantee.html', {'orphan': orphan, 'unread_count': unread_count, 'recent_notifications': recent_notifications})
+    orphan = get_object_or_404(Orphan, user=request.user)
+    
+    sponsorships = Sponsorship.objects.filter(orphan=orphan).order_by('-start_date')
+
+    context = {
+        'orphan': orphan,
+        'sponsorships': sponsorships
+    }
+    return render(request, 'Orphan-dashboard/Myguarantee.html', context)
 
 @login_required(login_url='index')
 def orphan_notifications(request):
-    try:
-        orphan = Orphan.objects.get(username=request.user.username)
-        unread_count = Notification.objects.filter(orphan=orphan, is_read=False).count()
-        recent_notifications = Notification.objects.filter(orphan=orphan).order_by('-created_at')[:5]
-        all_notifications = Notification.objects.filter(orphan=orphan).order_by('-created_at')
-    except Orphan.DoesNotExist:
-        orphan, unread_count, recent_notifications, all_notifications = None, 0, [], []
+    orphan = get_object_or_404(Orphan, user=request.user)
+    
+    all_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
         
     return render(request, 'Orphan-dashboard/notifications.html', {
         'orphan': orphan, 
-        'unread_count': unread_count, 
-        'recent_notifications': recent_notifications,
         'notifications': all_notifications 
     })
 
 @login_required(login_url='index')
 def orphan_edit_profile(request):
-    orphan = get_object_or_404(Orphan, username=request.user.username)
-    guardian = orphan.guardian
+    orphan = get_object_or_404(Orphan, user=request.user)
     
     if request.method == 'POST':
         orphan.age = request.POST.get('age', orphan.age)
@@ -850,50 +1005,44 @@ def orphan_edit_profile(request):
             orphan.image = request.FILES['profile_image']
             
         orphan.save()
-
-        if guardian:
-            guardian.phone = request.POST.get('guardian_phone', guardian.phone)
-            guardian.payout_method = request.POST.get('payout_method', guardian.payout_method)
-            guardian.payout_details = request.POST.get('payout_details', guardian.payout_details)
-            guardian.save()
-            request.user.email = request.POST.get('guardian_email', request.user.email)
-            request.user.save()
-
-        messages.success(request, 'تم حفظ التعديلات بنجاح.')
+        messages.success(request, 'تم حفظ التعديلات الشخصية بنجاح.')
         return redirect('orphan_edit_profile') 
 
     context = {
         'orphan': orphan,
-        'guardian': guardian,
         'is_male': orphan.gender == 'Male',
         'is_female': orphan.gender == 'Female',
     }
     return render(request, 'Orphan-dashboard/editProfile.html', context)
 
+# =================================================================
+#                     NOTIFICATIONS VIEWS
+# =================================================================
+
 @login_required(login_url='index')
 def mark_notification_read(request, notif_id):
+    """تحديد إشعار واحد كمقروء"""
     if request.method == 'POST':
-        try:
-            orphan = Orphan.objects.get(username=request.user.username)
-            notif = Notification.objects.get(id=notif_id, orphan=orphan)
-            notif.is_read = True
-            notif.save()
-            return JsonResponse({'status': 'success'})
-        except (Orphan.DoesNotExist, Notification.DoesNotExist):
-            return JsonResponse({'status': 'error'}, status=400)
-    return JsonResponse({'status': 'invalid request'}, status=400)
+        notification = get_object_or_404(Notification, id=notif_id, recipient=request.user)
+        notification.is_read = True
+        notification.save()
+    return redirect(request.META.get('HTTP_REFERER', 'index'))
 
 @login_required(login_url='index')
 def mark_all_notifications_read(request):
+    """تحديد كل الإشعارات كمقروءة"""
     if request.method == 'POST':
-        try:
-            orphan = Orphan.objects.get(username=request.user.username)
-            Notification.objects.filter(orphan=orphan, is_read=False).update(is_read=True)
-            return JsonResponse({'status': 'success'})
-        except Orphan.DoesNotExist:
-            return JsonResponse({'status': 'error'}, status=400)
-    return JsonResponse({'status': 'invalid request'}, status=400)
+        Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    return redirect(request.META.get('HTTP_REFERER', 'index'))
 
+@login_required(login_url='index')
+def delete_notification(request, notif_id):
+    """حذف الإشعار نهائياً"""
+    if request.method == 'POST':
+        notification = get_object_or_404(Notification, id=notif_id, recipient=request.user)
+        notification.delete()
+        messages.success(request, 'تم حذف الإشعار بنجاح.')
+    return redirect(request.META.get('HTTP_REFERER', 'index'))
 
 # =================================================================
 #                     SPONSOR / DONOR DASHBOARD VIEWS
@@ -903,14 +1052,10 @@ def mark_all_notifications_read(request):
 def sponsor_dashboard(request):
     try:
         donor = Donor.objects.get(email=request.user.email)
-        donor_notifications = Notification.objects.filter(donor=donor).order_by('-created_at')
-        unread_count = donor_notifications.filter(is_read=False).count()
-        recent_notifications = donor_notifications[:5]
         
         sponsored_count = Sponsorship.objects.filter(donor=donor, status='Active').count()
-        available_count = Orphan.objects.exclude(sponsorships__donor=donor).distinct().count()
+        available_count = Orphan.objects.filter(sponsorship_status='Available').exclude(sponsorships__donor=donor).distinct().count()
     except Donor.DoesNotExist:
-        # Fallback for Admin testing the dashboard
         donor = None
         unread_count = 0
         recent_notifications = []
@@ -919,8 +1064,6 @@ def sponsor_dashboard(request):
         
     context = {
         'donor': donor,
-        'unread_count': unread_count,
-        'recent_notifications': recent_notifications,
         'sponsored_count': sponsored_count,
         'available_count': available_count,
         'user': request.user
@@ -933,9 +1076,9 @@ def donor_sponsorships(request):
     try:
         donor = Donor.objects.get(email=request.user.email)
         sponsorships = Sponsorship.objects.filter(donor=donor).select_related('orphan')
-        donor_notifications = Notification.objects.filter(donor=donor).order_by('-created_at')
-        unread_count = donor_notifications.filter(is_read=False).count()
-        recent_notifications = donor_notifications[:5]
+        # donor_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+        # unread_count = donor_notifications.filter(is_read=False).count()
+        # recent_notifications = donor_notifications[:5]
     except Donor.DoesNotExist:
         donor = None
         sponsorships = []
@@ -945,13 +1088,12 @@ def donor_sponsorships(request):
     context = {
         'donor': donor,
         'sponsorships': sponsorships,
-        'unread_count': unread_count,
-        'recent_notifications': recent_notifications,
+        # 'unread_count': unread_count,
+        # 'recent_notifications': recent_notifications,
         'user': request.user
     }
     return render(request, 'Donor-dashboard/guarantee.html', context)
 
-from django.utils import timezone
 
 @login_required(login_url='index')
 def create_new_sponsorship(request, orphan_id):
@@ -960,19 +1102,40 @@ def create_new_sponsorship(request, orphan_id):
             donor = Donor.objects.get(email=request.user.email)
             orphan = get_object_or_404(Orphan, id=orphan_id)
             
+            if orphan.sponsorship_status != 'Available':
+                messages.error(request, "عذراً، هذا اليتيم غير متاح للكفالة في الوقت الحالي.")
+                return redirect('donor_orphans')
+
+            sponsorship_type = request.POST.get('sponsorship_type', 'Monthly')
+            duration_months = int(request.POST.get('duration_months', 1))
+            
+            base_amount = 50.00
+            if sponsorship_type == 'Educational':
+                base_amount = 40.00
+            elif sponsorship_type == 'Health':
+                base_amount = 60.00
+            elif sponsorship_type == 'Financial':
+                base_amount = 50.00
+                
+            total_amount = base_amount * duration_months
+
+            start_date = timezone.now().date()
+            end_date = start_date + timedelta(days=30 * duration_months)
+
             sponsorship = Sponsorship.objects.create(
                 donor=donor,
                 orphan=orphan,
-                amount=50.00, 
-                start_date=timezone.now().date(),
+                amount=total_amount, 
+                start_date=start_date,
+                end_date=end_date,     
                 status='Pending',
-                sponsorship_type='Monthly'
+                sponsorship_type=sponsorship_type 
             )
             
             first_payment = Payment.objects.create(
                 sponsorship=sponsorship,
                 amount=sponsorship.amount,
-                payment_date=timezone.now().date(),
+                payment_date=start_date,
                 status='Pending',
                 payment_method='Cash'
             )
@@ -981,24 +1144,28 @@ def create_new_sponsorship(request, orphan_id):
             
         except Donor.DoesNotExist:
             return redirect('sponsor_dashboard')
+        except ValueError:
+            messages.error(request, "يرجى التأكد من إدخال بيانات صحيحة للمدة.")
+            return redirect('donor_orphans')
             
     return redirect('donor_orphans')
+
 
 @login_required(login_url='index')
 def donor_orphans(request):
     try:
         donor = Donor.objects.get(email=request.user.email)
-        available_orphans = Orphan.objects.exclude(sponsorships__donor=donor).distinct()
-        donor_notifications = Notification.objects.filter(donor=donor).order_by('-created_at')
-        unread_count = donor_notifications.filter(is_read=False).count()
-        recent_notifications = donor_notifications[:5]
+        available_orphans = Orphan.objects.filter(sponsorship_status='Available').exclude(sponsorships__donor=donor).distinct()
+        
+        # donor_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+        # unread_count = donor_notifications.filter(is_read=False).count()
+        # recent_notifications = donor_notifications[:5]
     except Donor.DoesNotExist:
         donor = None
         available_orphans = Orphan.objects.filter(sponsorship_status='Available')
         unread_count = 0
         recent_notifications = []
         
-    # === THE SEARCH BAR ENGINE ===
     query = request.GET.get('q')
     if query:
         available_orphans = available_orphans.filter(name__icontains=query)
@@ -1006,19 +1173,18 @@ def donor_orphans(request):
     context = {
         'donor': donor,
         'orphans': available_orphans,
-        'unread_count': unread_count,
-        'recent_notifications': recent_notifications,
+        # 'unread_count': unread_count,
+        # 'recent_notifications': recent_notifications,
         'user': request.user,
         'search_query': query
     }
     return render(request, 'Donor-dashboard/showOrphan.html', context)
 
-
 @login_required(login_url='index')
 def donor_notifications(request):
     try:
         donor = Donor.objects.get(email=request.user.email)
-        notifications = Notification.objects.filter(donor=donor).order_by('-created_at')
+        notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
         unread_count = notifications.filter(is_read=False).count()
         recent_notifications = notifications[:5]
     except Donor.DoesNotExist:
@@ -1041,19 +1207,17 @@ def donor_notifications(request):
 def donor_edit_profile(request):
     try:
         donor = Donor.objects.get(email=request.user.email)
-        donor_notifications = Notification.objects.filter(donor=donor).order_by('-created_at')
-        unread_count = donor_notifications.filter(is_read=False).count()
-        recent_notifications = donor_notifications[:5]
+        # donor_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+        # unread_count = donor_notifications.filter(is_read=False).count()
+        # recent_notifications = donor_notifications[:5]
     except Donor.DoesNotExist:
-        # Prevent Admins from crashing the edit profile page
         return redirect('sponsor_dashboard')
         
     if request.method == 'POST':
-        # CRITICAL FIX: Update BOTH User and Donor emails to prevent lockout!
         new_email = request.POST.get('email')
         if new_email and new_email != request.user.email:
             request.user.email = new_email
-            request.user.username = new_email # Assuming username matches email
+            request.user.username = new_email 
             request.user.save()
             donor.email = new_email 
 
@@ -1075,8 +1239,8 @@ def donor_edit_profile(request):
     
     context = {
         'donor': donor,
-        'unread_count': unread_count,
-        'recent_notifications': recent_notifications,
+        # 'unread_count': unread_count,
+        # 'recent_notifications': recent_notifications,
         'user': request.user
     }
     return render(request, 'Donor-dashboard/editProfile.html', context)
@@ -1148,9 +1312,9 @@ def donor_payments(request):
         donor = Donor.objects.get(email=request.user.email)
         payments = Payment.objects.filter(sponsorship__donor=donor).order_by('-payment_date')
         
-        donor_notifications = Notification.objects.filter(donor=donor).order_by('-created_at')
-        unread_count = donor_notifications.filter(is_read=False).count()
-        recent_notifications = donor_notifications[:5]
+        # donor_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+        # unread_count = donor_notifications.filter(is_read=False).count()
+        # recent_notifications = donor_notifications[:5]
     except Donor.DoesNotExist:
         donor = None
         payments = []
@@ -1160,8 +1324,8 @@ def donor_payments(request):
     context = {
         'donor': donor,
         'payments': payments,
-        'unread_count': unread_count,
-        'recent_notifications': recent_notifications,
+        # 'unread_count': unread_count,
+        # 'recent_notifications': recent_notifications,
         'user': request.user
     }
     return render(request, 'Donor-dashboard/payments.html', context)
@@ -1172,9 +1336,9 @@ def pay_checkout(request, payment_id):
         donor = Donor.objects.get(email=request.user.email)
         payment = get_object_or_404(Payment, id=payment_id, sponsorship__donor=donor, status='Pending')
         
-        donor_notifications = Notification.objects.filter(donor=donor).order_by('-created_at')
-        unread_count = donor_notifications.filter(is_read=False).count()
-        recent_notifications = donor_notifications[:5]
+        # donor_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+        # unread_count = donor_notifications.filter(is_read=False).count()
+        # recent_notifications = donor_notifications[:5]
     except Donor.DoesNotExist:
         return redirect('sponsor_dashboard')
 
@@ -1203,8 +1367,8 @@ def pay_checkout(request, payment_id):
     context = {
         'donor': donor,
         'payment': payment,
-        'unread_count': unread_count,
-        'recent_notifications': recent_notifications,
+        # 'unread_count': unread_count,
+        # 'recent_notifications': recent_notifications,
         'user': request.user
     }
     return render(request, 'Donor-dashboard/checkout.html', context)
@@ -1230,3 +1394,304 @@ def initiate_sponsorship_payment(request, spon_id):
             return redirect('sponsor_dashboard')
             
     return redirect('donor_sponsorships')
+
+
+@guardian_required
+def guardian_dashboard(request):
+    """
+    Guardian home page showing summary statistics and recent activity.
+    
+    SECURITY: @guardian_required ensures only authenticated users with
+    a Guardian profile can access this view. All QuerySets are scoped
+    to request.user.guardian to enforce strict data isolation.
+    """
+    guardian = request.user.guardian
+    
+    my_orphans = Orphan.objects.filter(guardian=guardian)
+    
+    total_orphans = my_orphans.count()
+    pending_count = my_orphans.filter(sponsorship_status='Pending').count()
+    available_count = my_orphans.filter(sponsorship_status='Available').count()
+    sponsored_count = my_orphans.filter(sponsorship_status='Sponsored').count()
+    
+    recent_documents = OrphanDocument.objects.filter(
+        orphan__guardian=guardian
+    ).select_related('orphan').order_by('-uploaded_at')[:5]
+    
+    context = {
+        'guardian': guardian,
+        'total_orphans': total_orphans,
+        'pending_count': pending_count,
+        'available_count': available_count,
+        'sponsored_count': sponsored_count,
+        'recent_documents': recent_documents,
+    }
+    return render(request, 'Guardian-dashboard/dashboard.html', context)
+
+
+@guardian_required
+def guardian_my_orphans(request):
+    """
+    List view of all orphans linked to this guardian.
+    
+    WHY select_related is NOT used here: Orphan does not have deep FK
+    chains we need for this view — guardian is already known.
+    """
+    guardian = request.user.guardian
+    orphans = Orphan.objects.filter(guardian=guardian).order_by('-created_at')
+    
+    context = {
+        'guardian': guardian,
+        'orphans': orphans,
+    }
+    return render(request, 'Guardian-dashboard/guardian_my_orphans.html', context)
+
+
+@guardian_required
+def guardian_upload_document(request, orphan_id):
+    """
+    Upload an OrphanDocument for a specific orphan.
+    
+    CRITICAL SECURITY — IDOR PROTECTION:
+    We do NOT use get_object_or_404(Orphan, id=orphan_id) alone because that
+    would let a guardian manipulate the URL to access another guardian's orphan.
+    Instead, we filter by BOTH orphan_id AND guardian to ensure ownership.
+    """
+    guardian = request.user.guardian
+    
+    orphan = Orphan.objects.filter(id=orphan_id, guardian=guardian).first()
+    if not orphan:
+        messages.error(request, "ليس لديك صلاحية الوصول لبيانات هذا اليتيم.")
+        return redirect('guardian_my_orphans')
+    
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('document_file')
+        title = request.POST.get('title', '').strip()
+        doc_type = request.POST.get('document_type', 'Other')
+        
+        if not uploaded_file:
+            messages.error(request, "يرجى اختيار ملف للرفع.")
+        elif not title:
+            messages.error(request, "يرجى إدخال عنوان للمستند.")
+        else:
+            try:
+                with transaction.atomic():
+                    OrphanDocument.objects.create(
+                        orphan=orphan,
+                        title=title[:200],
+                        document=uploaded_file,
+                        document_type=doc_type,
+                        is_public=False,  
+                    )
+                messages.success(request, f"تم رفع المستند '{title}' بنجاح لليتيم {orphan.name}.")
+                return redirect('guardian_my_orphans')
+            except Exception:
+                messages.error(request, "حدث خطأ أثناء رفع الملف. يرجى المحاولة مرة أخرى.")
+    
+    context = {
+        'guardian': guardian,
+        'orphan': orphan,
+        'document_types': OrphanDocument.DOCUMENT_TYPES,
+    }
+    return render(request, 'Guardian-dashboard/upload_document.html', context)
+
+
+@guardian_required
+def guardian_apply_orphan(request):
+    guardian = request.user.guardian
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        age = request.POST.get('age')
+        gender = request.POST.get('gender')
+        area = request.POST.get('area', '').strip()
+        social_status = request.POST.get('social_status', 'غير محدد').strip()
+        health_status = request.POST.get('health_status', 'سليمة').strip()
+        
+        orphan_username = request.POST.get('orphan_username', '').strip()
+        orphan_password = request.POST.get('orphan_password', '')
+        
+        if not name or not gender or not area or not orphan_username or not orphan_password:
+            messages.error(request, "يرجى تعبئة جميع الحقول الإلزامية، بما فيها بيانات الدخول.")
+            return render(request, 'Guardian-dashboard/apply.html', {'guardian': guardian})
+            
+        if User.objects.filter(username=orphan_username).exists():
+            messages.error(request, f"عذراً، اسم المستخدم '{orphan_username}' محجوز مسبقاً.")
+            return render(request, 'Guardian-dashboard/apply.html', {'guardian': guardian})
+        
+        try:
+            with transaction.atomic():
+                orphan_user = User.objects.create_user(username=orphan_username, password=orphan_password)
+                
+                orphan = Orphan.objects.create(
+                    user=orphan_user,     
+                    guardian=guardian,      
+                    name=name,
+                    age=int(age) if age else None,
+                    gender=gender,
+                    area=area,
+                    social_status=social_status,
+                    health_status=health_status,
+                    sponsorship_status='Pending',
+                )
+                
+                if 'image' in request.FILES:
+                    orphan.image = request.FILES['image']
+                    orphan.save()
+                
+            messages.success(request, f"تم تسجيل اليتيم '{name}' بنجاح. حسابه الآن قيد المراجعة.")
+            return redirect('guardian_my_orphans')
+            
+        except Exception as e:
+            print(f"CRITICAL ERROR: {e}")
+            messages.error(request, "حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.")
+            return render(request, 'Guardian-dashboard/apply.html', {'guardian': guardian}) 
+    
+    context = {
+        'guardian': guardian,
+    }
+    return render(request, 'Guardian-dashboard/apply.html', context)
+
+@login_required(login_url='index')
+def guardian_profile(request):
+    try:
+        guardian = request.user.guardian
+    except:
+        return redirect('index') 
+
+    if request.method == 'POST':
+        request.user.first_name = request.POST.get('first_name', request.user.first_name)
+        request.user.last_name = request.POST.get('last_name', request.user.last_name)
+        request.user.email = request.POST.get('email', request.user.email)
+        request.user.save()
+
+        guardian.phone = request.POST.get('phone', guardian.phone)
+        guardian.payout_method = request.POST.get('payout_method', guardian.payout_method)
+        guardian.payout_details = request.POST.get('payout_details', guardian.payout_details)
+        guardian.save()
+
+        messages.success(request, 'تم حفظ تعديلات حسابك بنجاح.')
+        return redirect('guardian_profile')
+
+    context = {
+        'guardian': guardian,
+    }
+    return render(request, 'Guardian-dashboard/editProfile.html', context)
+
+@login_required(login_url='index')
+def guardian_notifications(request):
+    all_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+    context = {
+        'notifications': all_notifications 
+    }
+    return render(request, 'Guardian-dashboard/notifications.html', context)
+
+# =================================================================
+#                     ADMIN MANAGE GUARDIANS
+# =================================================================
+@login_required(login_url='index')
+@user_passes_test(lambda u: u.is_superuser)
+def manage_guardians(request):
+    if not request.user.is_superuser:
+        return redirect('index')
+
+    guardians = Guardian.objects.all().order_by('-id')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'add':
+            name = request.POST.get('name')
+            id_number = request.POST.get('id_number') 
+            phone = request.POST.get('phone')
+            relation = request.POST.get('relation_to_orphan')
+            email = request.POST.get('email')
+            password = request.POST.get('password') 
+            payout_method = request.POST.get('payout_method')
+            payout_details = request.POST.get('payout_details')
+
+            id_document = request.FILES.get('id_document')
+            legal_document = request.FILES.get('legal_document')
+
+            from django.contrib.auth.models import User
+            if User.objects.filter(username=id_number).exists():
+                messages.error(request, 'رقم الهوية هذا مسجل مسبقاً في النظام كوصي.')
+            else:
+                user = User.objects.create_user(username=id_number, email=email, password=password)
+                
+                Guardian.objects.create(
+                    user=user,
+                    name=name,
+                    id_number=id_number,
+                    phone=phone,
+                    relation_to_orphan=relation,
+                    payout_method=payout_method,
+                    payout_details=payout_details,
+                    id_document=id_document,
+                    legal_document=legal_document,
+                    is_approved=True 
+                )
+                messages.success(request, 'تم إنشاء حساب الوصي بنجاح.')
+
+        elif action == 'edit':
+            guardian_id = request.POST.get('guardian_id')
+            guardian = get_object_or_404(Guardian, id=guardian_id)
+            
+            guardian.name = request.POST.get('name', guardian.name)
+            guardian.id_number = request.POST.get('id_number', guardian.id_number)
+            guardian.phone = request.POST.get('phone', guardian.phone)
+            guardian.relation_to_orphan = request.POST.get('relation_to_orphan', guardian.relation_to_orphan)
+            guardian.payout_method = request.POST.get('payout_method', guardian.payout_method)
+            guardian.payout_details = request.POST.get('payout_details', guardian.payout_details)
+            
+            new_email = request.POST.get('email')
+            if new_email and guardian.user:
+                guardian.user.email = new_email
+                guardian.user.save()
+
+            if 'id_document' in request.FILES:
+                guardian.id_document = request.FILES['id_document']
+            if 'legal_document' in request.FILES:
+                guardian.legal_document = request.FILES['legal_document']
+                
+            guardian.save()
+            messages.success(request, 'تم تعديل بيانات الوصي بنجاح.')
+
+        return redirect('manage_guardians')
+
+    context = {
+        'guardians': guardians
+    }
+    return render(request, 'Admin-dashboard/manage_guardians.html', context)
+
+@login_required(login_url='index')
+def delete_guardian(request, guardian_id):
+    if not request.user.is_superuser or request.method != 'POST':
+        return redirect('manage_guardians')
+    
+    guardian = get_object_or_404(Guardian, id=guardian_id)
+    user = guardian.user
+    
+    guardian.delete()
+    if user:
+        user.delete() 
+        
+    messages.success(request, 'تم حذف الوصي وحساب الدخول الخاص به نهائياً.')
+    return redirect('manage_guardians')
+
+
+@login_required(login_url='login_view')
+@user_passes_test(lambda u: u.is_superuser, login_url='index')
+def toggle_document_visibility(request, doc_id):
+    if request.method == 'POST':
+        doc = get_object_or_404(OrphanDocument, id=doc_id)
+        
+        doc.is_public = not doc.is_public 
+        doc.save()
+        
+        status_text = "مرئياً للكافل" if doc.is_public else "مخفياً عن الكافل"
+        messages.success(request, f"تم تحديث المستند '{doc.title}' ليصبح {status_text}.")
+        
+        return redirect('admin_orphan_details', orphan_id=doc.orphan.id)
+        
+    return redirect('manage_orphans')

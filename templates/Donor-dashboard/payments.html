@@ -57,35 +57,62 @@
                         <td class="pay-orphan-name" style="padding: 15px; font-weight: bold;">{{ payment.sponsorship.orphan.name }}</td>
                         <td style="padding: 15px; color: #2a756b; font-weight: bold;">${{ payment.amount }}</td>
                         <td style="padding: 15px;" dir="ltr">{{ payment.payment_date|date:"Y-m-d" }}</td>
-                        <td class="pay-method" style="padding: 15px;">{{ payment.payment_method }}</td>
+                        <td class="pay-method" style="padding: 15px;">{{ payment.payment_method|default:"-" }}</td>
 
                         <td class="pay-status" data-status="{{ payment.status }}" style="padding: 15px;">
                             <span
                                 style="font-size: 0.85rem; padding: 5px 12px; border-radius: 15px; font-weight: bold; color: white; background-color: {% if payment.status == 'Completed' %}#68AF73{% elif payment.status == 'Pending' %}#fbba04{% else %}#dc3545{% endif %};">
-                                {% if payment.status == 'Completed' %}مكتملة{% elif payment.status == 'Pending' %}قيد الانتظار{% else %}فشلت{% endif %}
+                                {% if payment.status == 'Completed' %}مكتملة
+                                {% elif payment.status == 'Pending' %}قيد الانتظار
+                                {% else %}فشلت{% endif %}
                             </span>
                         </td>
 
                         <td style="padding: 15px; text-align: center;">
                             {% if payment.status == 'Completed' %}
-                            <a href="javascript:void(0);"
-                                onclick="document.getElementById('receiptModal_{{ payment.id }}').style.display='block'"
-                                style="background: #eef2f6; color: #006dff; padding: 6px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">عرض
-                                الإيصال</a>
+                                <a href="javascript:void(0);"
+                                    onclick="document.getElementById('receiptModal_{{ payment.id }}').style.display='block'"
+                                    style="background: #eef2f6; color: #006dff; padding: 6px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">
+                                    <i class="fas fa-receipt me-1"></i> عرض الإيصال
+                                </a>
+                            
                             {% elif payment.status == 'Pending' %}
-                            <a href="{% url 'pay_checkout' payment.id %}"
-                                style="background: #2a756b; color: white; padding: 6px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">دفع
-                                الآن</a>
+                                {% if 'cash' in payment.payment_method|lower or 'bank' in payment.payment_method|lower or 'palpay' in payment.payment_method|lower %}
+                                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                                        <span style="background: #fff8e1; color: #f57f17; padding: 6px 15px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; border: 1px solid #ffe082; display: inline-block;">
+                                            <i class="fas fa-hourglass-half me-1"></i> بانتظار التأكيد
+                                        </span>
+                                        
+                                        {% if payment.transaction_reference %}
+                                        <span style="font-size: 0.85rem; color: #555; background: #f8f9fa; padding: 4px 10px; border-radius: 4px; border: 1px dashed #ccc;">
+                                            الرقم المرجعي: <strong style="color: #2a756b; font-family: monospace; letter-spacing: 1px;">{{ payment.transaction_reference }}</strong>
+                                        </span>
+                                        
+                                        {% if 'cash' in payment.payment_method|lower %}
+                                            <small style="color: #dc3545; font-size: 0.75rem; font-weight: bold;">(يرجى تسليم المبلغ خلال 48 ساعة)</small>
+                                        {% endif %}
+                                        
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <a href="{% url 'pay_checkout' payment.id %}"
+                                        style="background: #2a756b; color: white; padding: 6px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">
+                                        <i class="fas fa-credit-card me-1"></i> إكمال الدفع
+                                    </a>
+                                {% endif %}
+
                             {% else %}
-                            <span style="color: #ccc;">-</span>
+                                <a href="{% url 'pay_checkout' payment.id %}"
+                                    style="background: #dc3545; color: white; padding: 6px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">
+                                    <i class="fas fa-redo me-1"></i> إعادة المحاولة
+                                </a>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
                         <td colspan="7" style="text-align: center; padding: 40px; color: #777; font-size: 1.1rem;">
-                            <i class="fas fa-file-invoice-dollar"
-                                style="font-size: 3rem; color: #ccc; margin-bottom: 15px; display: block;"></i>
+                            <i class="fas fa-file-invoice-dollar" style="font-size: 3rem; color: #ccc; margin-bottom: 15px; display: block;"></i>
                             لا توجد سجلات مالية حتى الآن.
                         </td>
                     </tr>

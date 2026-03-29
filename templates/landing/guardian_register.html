@@ -1,0 +1,184 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تسجيل كوصي | كفالة</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/all.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/landing-style.css' %}" />
+
+    <style>
+        :root {
+            --primary-color: #2a756b;
+            --secondary-color: #006dff;
+            --accent-color: #D69E2E;
+            --dark-text: #1A365D;
+            --light-text: #666666;
+            --bg-color: #F7FAFC;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif !important;
+            background-color: var(--bg-color);
+            color: var(--dark-text);
+        }
+
+        .navbar {
+            background: white !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            padding: 10px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .auth-container {
+            max-width: 550px;
+            margin: 60px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+        }
+
+        .title-modal {
+            color: var(--primary-color);
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .user-inputs {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 14px 15px;
+            width: 100%;
+            margin-bottom: 20px;
+            transition: 0.3s;
+            font-family: 'Tajawal', sans-serif;
+            outline: none;
+        }
+
+        .user-inputs:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(42, 117, 107, 0.1);
+        }
+
+        .login-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .login-btn:hover {
+            background: #1f5a52;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(42, 117, 107, 0.3);
+        }
+
+        .alert-messages {
+            margin-bottom: 20px;
+        }
+
+        .alert-msg {
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .alert-msg.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .alert-msg.error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'index' %}">
+                <img src="{% static 'img/loho.png' %}" width="60" height="60" alt="شعار كفالة" />
+            </a>
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'index' %}" style="font-weight: 700; color: var(--dark-text); text-decoration: none;">
+                        <i class="fas fa-arrow-right" style="margin-left: 5px;"></i> العودة للرئيسية
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="auth-container">
+            <div class="text-center mb-3">
+                <i class="fas fa-user-shield" style="font-size: 3rem; color: var(--accent-color);"></i>
+            </div>
+            <h2 class="title-modal">إنشاء حساب وصي</h2>
+            <p style="text-align: center; color: var(--light-text); margin-bottom: 30px;">
+                قم بفتح حساب وصي لإدارة بيانات الأيتام ورفع المستندات الرسمية وإدارة طلبات الرعاية.
+            </p>
+
+            {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                <div class="alert-msg {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'guardian_register' %}">
+                {% csrf_token %}
+                
+                <label style="font-weight: 700; color: #333; margin-bottom: 8px; display: block;">الاسم الرباعي <span style="color: #c62828;">*</span></label>
+                <input dir="rtl" class="user-inputs" type="text" name="name" placeholder="أدخل اسمك الكامل" required />
+
+                <label style="font-weight: 700; color: #333; margin-bottom: 8px; display: block;">رقم الهاتف</label>
+                <input dir="ltr" class="user-inputs" type="text" name="phone" placeholder="أدخل رقم الهاتف للتواصل" />
+
+                <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
+
+                <label style="font-weight: 700; color: #333; margin-bottom: 8px; display: block;">رقم الهوية (سيُستخدم لتسجيل الدخول) <span style="color: #c62828;">*</span></label>
+                <input dir="ltr" class="user-inputs" type="text" name="id_number" placeholder="أدخل رقم الهوية (9 أرقام)" pattern="\d{9}" title="الرجاء إدخال رقم هوية صحيح مكون من 9 أرقام" maxlength="9" required />
+
+                <label style="font-weight: 700; color: #333; margin-bottom: 8px; display: block;">كلمة المرور <span style="color: #c62828;">*</span></label>
+                <input dir="ltr" class="user-inputs" type="password" name="password" placeholder="أدخل كلمة مرور قوية" required />
+
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-check" style="margin-left: 5px;"></i> تسجيل حساب الوصي
+                </button>
+            </form>
+
+            <p style="text-align: center; margin-top: 25px; font-size: 0.95rem;">
+                هل تمتلك حساباً بالفعل؟
+                <a href="{% url 'index' %}" style="color: var(--accent-color); font-weight: 800; text-decoration: none;">
+                    تسجيل الدخول
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="background: var(--primary-color); color: white; padding: 20px 0; text-align: center; margin-top: 40px;">
+        <p style="margin: 0; opacity: 0.9; font-size: 0.95rem;">جميع الحقوق محفوظة لدى منصة كفالة © 2025</p>
+    </footer>
+
+</body>
+</html>
