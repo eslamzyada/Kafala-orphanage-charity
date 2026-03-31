@@ -65,18 +65,22 @@
                     </td>
 
                     <td class="stutes">
-                        <a href="javascript:void(0);" class="show-guarantee" style="text-decoration:none;"
-                            onclick="document.getElementById('payModal_{{ payment.id }}').style.display='block'">تفاصيل</a>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="javascript:void(0);" class="btn btn-sm btn-secondary text-white" 
+                                onclick="document.getElementById('payModal_{{ payment.id }}').style.display='block'">تفاصيل</a>
 
-                        {% if payment.status != 'Completed' %}
-                        <form method="POST" action="{% url 'send_payment_reminder' payment.id %}"
-                            style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="end-guarantee"
-                                style="border:none; cursor:pointer; background-color:#ff9800; color:white; padding: 4px 10px; border-radius:15px; font-size:14px;">إرسال
-                                إشعار</button>
-                        </form>
-                        {% endif %}
+                            {% if payment.status != 'Completed' %}
+                                {% if payment.payment_method == 'Cash' %}
+                                    <a href="javascript:void(0);" class="btn btn-sm btn-success fw-bold" 
+                                        onclick="document.getElementById('cashModal_{{ payment.id }}').style.display='block'">تأكيد الكاش</a>
+                                {% else %}
+                                    <form method="POST" action="{% url 'send_payment_reminder' payment.id %}" style="margin:0;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm text-white" style="background-color:#ff9800;">إرسال إشعار</button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -121,7 +125,28 @@
     </div>
 </div>
 {% endfor %}
-
+{% for payment in payments %}
+    {% if payment.payment_method == 'Cash' and payment.status == 'Pending' %}
+    <div id="cashModal_{{ payment.id }}" class="modalshow" style="display: none; position: fixed; z-index: 999999; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(0,0,0,0.6); overflow-y: auto;">
+        <div style="background-color: white; width: 90%; max-width: 400px; margin: 15vh auto; border-radius: 12px; overflow: hidden; direction: rtl; text-align: right;">
+            <div style="background-color: #198754; color: white; padding: 15px; display: flex; justify-content: space-between;">
+                <h5 style="margin: 0; font-weight: bold;">تأكيد استلام نقدي (كاش)</h5>
+                <span onclick="document.getElementById('cashModal_{{ payment.id }}').style.display='none'" style="cursor: pointer; font-size: 20px;">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <p class="text-muted small">يرجى إدخال الكود المرجعي الذي زوده الكافل <strong>({{ payment.sponsorship.donor.name }})</strong> لتأكيد استلام مبلغ <strong>${{ payment.amount }}</strong>.</p>
+                <form method="POST" action="{% url 'manage_payments' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="confirm_cash" value="true">
+                    <input type="hidden" name="payment_id" value="{{ payment.id }}">
+                    <input type="text" name="reference_code" class="form-control mb-3 text-center fw-bold" placeholder="مثال: CASH-12-4589" required dir="ltr">
+                    <button type="submit" class="btn btn-success w-100 fw-bold">تأكيد ومطابقة الكود</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
 {% block extra_scripts %}
 <script>
     function normalizeArabic(text) {

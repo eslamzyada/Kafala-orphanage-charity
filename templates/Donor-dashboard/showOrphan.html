@@ -59,20 +59,36 @@
                 <div class="orphan-actions" style="padding: 0 20px 20px 20px;">
                     <form action="{% url 'create_new_sponsorship' orphan.id %}" method="POST" style="background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #e9ecef;">
                         {% csrf_token %}
-                        <p style="margin: 0 0 10px 0; font-size: 0.95rem; font-weight: bold; color: #2a756b;">اختر تفاصيل الكفالة:</p>
+                        <p style="margin: 0 0 10px 0; font-size: 0.95rem; font-weight: bold; color: #2a756b;">تفاصيل الكفالة المطلوبة:</p>
                         
-                        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
-                            <select name="sponsorship_type" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; font-size: 0.95rem; background-color: white;">
-                                <option value="Monthly" {% if orphan.sponsorship_need == 'Monthly' %}selected{% endif %}>كفالة شهرية شاملة (50$/شهر)</option>
-                                <option value="Educational" {% if orphan.sponsorship_need == 'Educational' %}selected{% endif %}>كفالة تعليمية (40$/شهر)</option>
-                                <option value="Health" {% if orphan.sponsorship_need == 'Health' %}selected{% endif %}>كفالة صحية (60$/شهر)</option>
-                                <option value="Financial" {% if orphan.sponsorship_need == 'Financial' %}selected{% endif %}>مالية مقطوعة (50$/شهر)</option>
-                            </select>
-                            
-                            <select name="duration_months" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; font-size: 0.95rem; background-color: white;">
-                                <option value="1">لمدة شهر واحد</option>
-                                <option value="6">لمدة 6 أشهر</option>
-                                <option value="12">لمدة سنة كاملة</option>
+                        <div style="background: #e6f3f1; border: 1px solid #b2d8d2; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="display: block; font-size: 0.8rem; color: #2a756b; font-weight: bold; margin-bottom: 4px;">نوع الاحتياج:</span>
+                                <span class="badge bg-primary fs-6">{{ orphan.get_sponsorship_need_display }}</span>
+                            </div>
+                            <div style="text-align: left;">
+                                <span style="display: block; font-size: 0.8rem; color: #2a756b; font-weight: bold; margin-bottom: 4px;">المبلغ الشهري:</span>
+                                <span style="font-size: 1.15rem; font-weight: bold; color: #198754;">
+                                    {% if orphan.requested_amount %}
+                                        {{ orphan.requested_amount }}$
+                                    {% else %}
+                                        {% if orphan.sponsorship_need == 'Educational' %}40$
+                                        {% elif orphan.sponsorship_need == 'Health' %}60$
+                                        {% elif orphan.sponsorship_need == 'Monthly' %}60$
+                                        {% else %}50$
+                                        {% endif %}
+                                    {% endif %}
+                                    <small style="font-size: 0.75rem; color: #6c757d;">/ شهر</small>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 0.85rem; font-weight: bold; color: #555; margin-bottom: 5px; display: block;">حدد مدة الكفالة:</label>
+                            <select name="duration_months" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; font-size: 0.95rem; background-color: white; cursor: pointer;">
+                                <option value="1">لمدة شهر واحد (دفعة واحدة)</option>
+                                <option value="6">لمدة 6 أشهر (دفعة كاملة عن 6 أشهر)</option>
+                                <option value="12">لمدة سنة كاملة (دفعة كاملة عن سنة)</option>
                             </select>
                         </div>
 

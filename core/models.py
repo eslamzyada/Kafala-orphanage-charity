@@ -90,11 +90,12 @@ class Orphan(models.Model):
     
     birth_certificate = models.FileField(upload_to='orphan_certs/birth/', null=True, blank=True, verbose_name="شهادة الميلاد")
     death_certificate = models.FileField(upload_to='orphan_certs/death/', null=True, blank=True, verbose_name="شهادة الوفاة / إثبات الفقد")
-
+    guardianship_document = models.FileField(upload_to='orphan_certs/guardianship/', null=True, blank=True, verbose_name="مستند إثبات الوصاية")
     is_birth_cert_public = models.BooleanField(default=False, verbose_name="السماح للكافل برؤية شهادة الميلاد")
     is_death_cert_public = models.BooleanField(default=False, verbose_name="السماح للكافل برؤية شهادة الوفاة")
-
+    is_guardianship_doc_public = models.BooleanField(default=False, verbose_name="السماح للكافل برؤية مستند الوصاية")
     guardian_name = models.CharField(max_length=191, null=True, blank=True)
+    kinship_to_guardian = models.CharField(max_length=100, null=True, blank=True, verbose_name="صلة القرابة بالوصي")
     phone = models.CharField(max_length=20, null=True, blank=True)
     contact_email = models.EmailField(max_length=191, null=True, blank=True)
 
@@ -103,7 +104,8 @@ class Orphan(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    requested_amount = models.IntegerField(null=True, blank=True, verbose_name="المبلغ المطلوب المخصص (دولار)")
+    health_report = models.FileField(upload_to='orphan_certs/health/', null=True, blank=True, verbose_name="التقرير الطبي")
     guardian = models.ForeignKey(Guardian, on_delete=models.CASCADE, related_name='orphans', null=True, blank=True)
     
     STATUS_CHOICES = [

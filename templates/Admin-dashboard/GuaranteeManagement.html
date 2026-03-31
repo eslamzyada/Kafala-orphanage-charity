@@ -128,20 +128,17 @@
         </div>
 
         <div style="padding: 25px; color: #333;">
-            <div
-                style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                <p style="margin: 0;"><strong>اسم الكافل:</strong> {{ sponsorship.donor.name }}</p>
-                <p style="margin: 0;"><strong>اسم اليتيم:</strong> {{ sponsorship.orphan.name }}</p>
+            <div class="row mb-3 border-bottom pb-2">
+                <div class="col-6"><p class="mb-0"><strong>اسم الكافل:</strong> <br> <span class="text-primary fw-bold">{{ sponsorship.donor.name }}</span></p></div>
+                <div class="col-6"><p class="mb-0"><strong>اسم اليتيم:</strong> <br> <span class="text-primary fw-bold">{{ sponsorship.orphan.name }}</span></p></div>
             </div>
-            <div
-                style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eeeeee; padding-bottom: 10px;">
-                <p style="margin: 0;"><strong>نوع الكفالة:</strong> {{ sponsorship.get_sponsorship_type_display }}</p>
-                <p style="margin: 0;"><strong>المبلغ الشهري:</strong> ${{ sponsorship.amount }}</p>
+            <div class="row mb-3 border-bottom pb-2">
+                <div class="col-6"><p class="mb-0"><strong>نوع الكفالة:</strong> <br> <span class="badge bg-secondary mt-1">{{ sponsorship.get_sponsorship_type_display }}</span></p></div>
+                <div class="col-6"><p class="mb-0"><strong>المبلغ الشهري:</strong> <br> <span class="text-success fw-bold fs-5">${{ sponsorship.amount }}</span></p></div>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                <p style="margin: 0;"><strong>تاريخ البدء:</strong> {{ sponsorship.start_date|date:"Y-m-d" }}</p>
-                <p style="margin: 0;"><strong>تاريخ الانتهاء:</strong> {{ sponsorship.end_date|date:"Y-m-d"|default:"غير
-                    محدد" }}</p>
+            <div class="row">
+                <div class="col-6"><p class="mb-0 text-muted"><strong>تاريخ البدء:</strong> <br> <span dir="ltr">{{ sponsorship.start_date|date:"Y-m-d" }}</span></p></div>
+                <div class="col-6"><p class="mb-0 text-muted"><strong>تاريخ الانتهاء:</strong> <br> <span dir="ltr">{{ sponsorship.end_date|date:"Y-m-d"|default:"غير محدد" }}</span></p></div>
             </div>
         </div>
     </div>

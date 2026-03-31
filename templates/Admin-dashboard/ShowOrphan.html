@@ -18,7 +18,6 @@
         border: 1px solid #eef0f2;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         transition: transform 0.2s ease-in-out;
-        height: 100%;
     }
     
     .custom-card:hover {
@@ -84,7 +83,6 @@
     .btn-delete { background-color: var(--danger-red); color: #fff; }
     .btn-delete:hover { background-color: #c9302c; color: #fff; }
 
-    /* النوافذ المنبثقة (Modals) */
     .custom-modal {
         display: none;
         position: fixed;
@@ -96,14 +94,13 @@
         animation: fadeIn 0.3s ease-out;
     }
 
-    /* تم تغيير الاسم من modal-dialog إلى custom-dialog للهروب من Bootstrap */
     .custom-dialog {
         background-color: #fff;
         margin: 40px auto;
         padding: 30px;
         border-radius: 16px;
         width: 90%;
-        max-width: 650px;
+        max-width: 750px; /* توسيع العرض قليلاً ليناسب الحقول الجديدة */
         position: relative;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         animation: slideDown 0.3s ease-out;
@@ -143,7 +140,7 @@
     }
 </style>
 
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-5 bg-white p-4" style="border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-white p-4" style="border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
     
     <div class="d-flex align-items-center gap-4">
         <div class="position-relative">
@@ -175,10 +172,33 @@
     </div>
 </div>
 
+<div class="custom-card p-4 mb-4" style="border-left: 5px solid var(--primary-teal);">
+    <h5 class="card-header-title mb-3" style="color: var(--primary-teal);">
+        <i class="fas fa-book-open text-warning me-2"></i> القصة الإنسانية وتفاصيل الكفالة
+    </h5>
+    <div class="row">
+        <div class="col-md-8">
+            <p style="line-height: 1.8; color: #555; font-size: 1.05rem; white-space: pre-line;">
+                {{ orphan.story|default:"لم يتم كتابة قصة أو خلفية إنسانية لهذا اليتيم." }}
+            </p>
+        </div>
+        <div class="col-md-4" style="border-right: 1px dashed #ddd; padding-right: 20px;">
+            <ul class="info-list">
+                <li><strong>نوع الكفالة المطلوبة:</strong> <span class="badge bg-primary fs-6">{{ orphan.get_sponsorship_need_display }}</span></li>
+                <li><strong>المبلغ المخصص (شهرياً):</strong> 
+                    <span class="text-success fw-bold fs-5">
+                        {% if orphan.requested_amount %}{{ orphan.requested_amount }}${% else %}<span class="text-muted fs-6">افتراضي (60$)</span>{% endif %}
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4 mb-5">
     
     <div class="col-lg-6">
-        <div class="custom-card p-4">
+        <div class="custom-card h-100 p-4">
             <h5 class="card-header-title" style="color: var(--primary-teal); border-bottom: 2px solid #D69E2E;">
                 <i class="fas fa-child"></i> بيانات اليتيم الأساسية
             </h5>
@@ -188,19 +208,24 @@
                 <li><strong>تاريخ التسجيل:</strong> <span dir="ltr">{{ orphan.created_at|date:"Y/m/d" }}</span></li>
                 <li><strong>المنطقة:</strong> <span>{{ orphan.area }}</span></li>
                 <li><strong>الحالة الاجتماعية:</strong> <span>{{ orphan.social_status }}</span></li>
-                <li><strong>الحالة الصحية:</strong> <span>{{ orphan.health_status }}</span></li>
+                <li><strong>الحالة الصحية:</strong> 
+                    <span class="{% if orphan.health_status != 'سليمة' and orphan.health_status != 'ممتازة' %}text-danger fw-bold{% endif %}">
+                        {{ orphan.health_status }}
+                    </span>
+                </li>
             </ul>
         </div>
     </div>
 
     <div class="col-lg-6">
-        <div class="custom-card p-4">
+        <div class="custom-card h-100 p-4">
             <h5 class="card-header-title" style="color: var(--secondary-blue); border-bottom: 2px solid var(--secondary-blue);">
                 <i class="fas fa-user-shield"></i> بيانات الوصي والمالية
             </h5>
             {% if guardian %}
                 <ul class="info-list">
                     <li><strong>الاسم:</strong> <span>{{ guardian.name }}</span></li>
+                    <li><strong>صلة القرابة:</strong> <span class="badge bg-light text-dark border">{{ orphan.kinship_to_guardian|default:"غير محدد" }}</span></li>
                     <li><strong>رقم الهوية:</strong> <span>{{ guardian.id_number }}</span></li>
                     <li><strong>رقم الهاتف:</strong> <a href="tel:{{ guardian.phone }}" class="fw-bold text-decoration-none" dir="ltr">{{ guardian.phone }}</a></li>
                     <li><strong>البريد الإلكتروني:</strong> <span class="fw-bold" dir="ltr">{{ guardian.user.email|default:"غير متوفر" }}</span></li>
@@ -217,7 +242,7 @@
                 </ul>
                 {% if guardian.legal_document %}
                     <div class="text-center mt-3">
-                        <a href="{{ guardian.legal_document.url }}" target="_blank" class="btn btn-sm btn-outline-primary fw-bold w-100"><i class="fas fa-file-pdf me-2"></i> عرض مستند الوصاية القانوني</a>
+                        <a href="{{ guardian.legal_document.url }}" target="_blank" class="btn btn-sm btn-outline-primary fw-bold w-100"><i class="fas fa-file-pdf me-2"></i> عرض مستند الوصاية القديم</a>
                     </div>
                 {% endif %}
             {% else %}
@@ -233,7 +258,7 @@
 
 <div class="custom-card p-4 mb-4">
     <h5 class="card-header-title mb-4" style="color: var(--text-dark); border-bottom: 2px solid #eee;">
-        <i class="fas fa-folder-open text-primary me-2"></i> الوثائق والمرفقات العامة
+        <i class="fas fa-folder-open text-primary me-2"></i> الوثائق والمرفقات الرسمية
     </h5>
     <div class="table-responsive">
         <table class="table table-hover align-middle text-center mb-0">
@@ -303,6 +328,32 @@
                 </tr>
                 {% endif %}
 
+                {% if orphan.guardianship_document %}
+                <tr>
+                    <td class="fw-bold text-dark"><i class="fas fa-file-signature text-warning me-2"></i> حجة الوصاية وإثبات القرابة</td>
+                    <td><span class="badge bg-secondary px-3 py-2 rounded-pill"><i class="fas fa-lock me-1"></i> سري (إدارة فقط)</span></td>
+                    <td>
+                        <div class="table-actions">
+                            <a href="{{ orphan.guardianship_document.url }}" target="_blank" class="btn btn-outline-primary"><i class="fas fa-external-link-alt"></i> عرض</a>
+                            <a href="{{ orphan.guardianship_document.url }}" download class="btn btn-outline-success"><i class="fas fa-download"></i> تحميل</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+
+                {% if orphan.health_report %}
+                <tr>
+                    <td class="fw-bold text-dark"><i class="fas fa-notes-medical text-danger me-2"></i> التقرير الطبي</td>
+                    <td><span class="badge bg-secondary px-3 py-2 rounded-pill"><i class="fas fa-lock me-1"></i> سري (إدارة فقط)</span></td>
+                    <td>
+                        <div class="table-actions">
+                            <a href="{{ orphan.health_report.url }}" target="_blank" class="btn btn-outline-primary"><i class="fas fa-external-link-alt"></i> عرض</a>
+                            <a href="{{ orphan.health_report.url }}" download class="btn btn-outline-success"><i class="fas fa-download"></i> تحميل</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+
                 {% if guardian and guardian.id_document %}
                 <tr>
                     <td class="fw-bold text-dark"><i class="fas fa-id-card text-secondary me-2"></i> صورة هوية الوصي</td>
@@ -359,11 +410,11 @@
                     </td>
                 </tr>
                 {% empty %}
-                    {% if not orphan.birth_certificate and not orphan.death_certificate and not guardian.id_document %}
+                    {% if not orphan.birth_certificate and not orphan.death_certificate and not orphan.guardianship_document and not orphan.health_report and not guardian.id_document %}
                     <tr>
                         <td colspan="3" class="text-muted py-5">
                             <i class="fas fa-folder-minus fa-2x mb-2 text-light"></i><br>
-                            لا توجد وثائق مرفوعة لهذا اليتيم حتى الآن
+                            لا توجد وثائق رسمية أو مرفقات لهذا اليتيم حتى الآن
                         </td>
                     </tr>
                     {% endif %}
@@ -411,57 +462,67 @@
                 </div>
             </div>
 
-            <h6 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--primary-teal);">إعدادات العرض والخوارزمية</h6>
+            <h6 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--primary-teal);">القصة وإعدادات الكفالة</h6>
             <div class="row g-3 mb-4">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label fw-bold text-danger small">حالة اليتيم في النظام</label>
                     <select name="sponsorship_status" class="form-select border-danger">
-                        <option value="Pending" {% if orphan.sponsorship_status == 'Pending' %}selected{% endif %}>قيد المراجعة (مخفي)</option>
-                        <option value="Available" {% if orphan.sponsorship_status == 'Available' %}selected{% endif %}>متاح للكفالة (مرئي)</option>
+                        <option value="Pending" {% if orphan.sponsorship_status == 'Pending' %}selected{% endif %}>قيد المراجعة</option>
+                        <option value="Available" {% if orphan.sponsorship_status == 'Available' %}selected{% endif %}>متاح للكفالة</option>
                         <option value="Sponsored" {% if orphan.sponsorship_status == 'Sponsored' %}selected{% endif %}>مكفول</option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label small text-muted">الاحتياج الأساسي للكفالة</label>
                     <select name="sponsorship_need" class="form-select">
-                        <option value="Monthly" {% if orphan.sponsorship_need == 'Monthly' %}selected{% endif %}>شاملة (Monthly)</option>
-                        <option value="Educational" {% if orphan.sponsorship_need == 'Educational' %}selected{% endif %}>تعليمية (Educational)</option>
-                        <option value="Health" {% if orphan.sponsorship_need == 'Health' %}selected{% endif %}>صحية (Health)</option>
-                        <option value="Financial" {% if orphan.sponsorship_need == 'Financial' %}selected{% endif %}>مالية (Financial)</option>
+                        <option value="Monthly" {% if orphan.sponsorship_need == 'Monthly' %}selected{% endif %}>شاملة</option>
+                        <option value="Educational" {% if orphan.sponsorship_need == 'Educational' %}selected{% endif %}>تعليمية</option>
+                        <option value="Health" {% if orphan.sponsorship_need == 'Health' %}selected{% endif %}>صحية</option>
+                        <option value="Financial" {% if orphan.sponsorship_need == 'Financial' %}selected{% endif %}>مالية مخصصة</option>
                     </select>
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">المبلغ المخصص ($)</label>
+                    <input type="number" name="requested_amount" value="{{ orphan.requested_amount|default:'' }}" class="form-control" placeholder="اتركه فارغاً للافتراضي">
+                </div>
                 <div class="col-12">
-                    <label class="form-label small text-muted">قصة اليتيم (إنسانية للمتبرع)</label>
+                    <label class="form-label small text-muted">قصة اليتيم والخلفية الإنسانية</label>
                     <textarea name="story" class="form-control" rows="3">{{ orphan.story }}</textarea>
                 </div>
             </div>
 
-            <h6 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--danger-red);"><i class="fas fa-lock me-1"></i> المستندات الثبوتية (سرية)</h6>
+            <h6 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--danger-red);"><i class="fas fa-lock me-1"></i> المستندات الثبوتية والطبية</h6>
             <div class="row g-3 mb-4">
                 <div class="col-md-6">
                     <label class="form-label small text-muted">شهادة الميلاد</label>
                     <input type="file" name="birth_certificate" class="form-control form-control-sm" accept=".pdf,.jpg,.png">
-                    {% if orphan.birth_certificate %}
-                        <a href="{{ orphan.birth_certificate.url }}" target="_blank" class="d-block mt-1 small text-success text-decoration-none"><i class="fas fa-check-circle"></i> عرض الملف الحالي</a>
-                    {% endif %}
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small text-muted">شهادة الوفاة / الفقد</label>
                     <input type="file" name="death_certificate" class="form-control form-control-sm" accept=".pdf,.jpg,.png">
-                    {% if orphan.death_certificate %}
-                        <a href="{{ orphan.death_certificate.url }}" target="_blank" class="d-block mt-1 small text-success text-decoration-none"><i class="fas fa-check-circle"></i> عرض الملف الحالي</a>
-                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">حجة الوصاية</label>
+                    <input type="file" name="guardianship_document" class="form-control form-control-sm" accept=".pdf,.jpg,.png">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">التقرير الطبي (للحالات الخاصة)</label>
+                    <input type="file" name="health_report" class="form-control form-control-sm" accept=".pdf,.jpg,.png">
                 </div>
             </div>
 
             {% if guardian %}
             <h6 class="fw-bold text-muted mb-3 border-bottom pb-2">بيانات الوصي والمالية</h6>
             <div class="row g-3 mb-4">
-                <div class="col-md-8">
+                <div class="col-md-6">
                     <label class="form-label small text-muted">اسم الوصي</label>
                     <input type="text" name="guardian_name" value="{{ guardian.name }}" class="form-control" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">صلة القرابة</label>
+                    <input type="text" name="kinship_to_guardian" value="{{ orphan.kinship_to_guardian|default:'' }}" class="form-control">
+                </div>
+                <div class="col-md-6">
                     <label class="form-label small text-muted">رقم الهوية</label>
                     <input type="text" name="guardian_id" value="{{ guardian.id_number }}" class="form-control" required>
                 </div>
@@ -481,16 +542,9 @@
                         <option value="Cash" {% if guardian.payout_method == 'Cash' %}selected{% endif %}>استلام نقدي</option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <label class="form-label small text-muted">تفاصيل الحساب</label>
                     <input type="text" name="payout_details" value="{{ guardian.payout_details|default:'' }}" class="form-control">
-                </div>
-                <div class="col-12 mt-3">
-                    <label class="form-label small text-muted">هوية الوصي (تحقق أمني)</label>
-                    <input type="file" name="id_document" class="form-control form-control-sm" accept=".pdf,.jpg,.png">
-                    {% if guardian.id_document %}
-                        <a href="{{ guardian.id_document.url }}" target="_blank" class="d-block mt-1 small text-success text-decoration-none"><i class="fas fa-id-card"></i> عرض الهوية الحالية</a>
-                    {% endif %}
                 </div>
             </div>
             {% endif %}

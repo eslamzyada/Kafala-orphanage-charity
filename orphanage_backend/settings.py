@@ -8,6 +8,18 @@ import os
 from dotenv import load_dotenv
 import dj_database_url
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# FOR PRODUCTION, UNCOMMENT AND FILL IN THE BELOW EMAIL SETTINGS
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 # 1. Base Directory and Environment Variables
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))

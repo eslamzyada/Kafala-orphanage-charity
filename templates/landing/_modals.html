@@ -159,9 +159,7 @@
             <input dir="ltr" class="user-inputs" type="password" name="password" placeholder="كلمة المرور" required />
 
             <div style="text-align: right; margin-bottom: 15px;">
-                <a href="{% url 'password_reset' %}" style="color: var(--light-text); font-size: 0.9rem; text-decoration: none; transition: 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--light-text)'">
-                    هل نسيت كلمة المرور؟
-                </a>
+                <a href="{% url 'password_reset' %}" class="text-decoration-none fw-bold" style="color: var(--primary-teal); font-size: 0.9rem;">نسيت كلمة المرور؟</a>
             </div>
 
             <button type="submit" class="login-btn">تسجيل الدخول</button>

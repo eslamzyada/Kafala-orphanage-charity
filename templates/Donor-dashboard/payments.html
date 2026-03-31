@@ -76,8 +76,13 @@
                                     <i class="fas fa-receipt me-1"></i> عرض الإيصال
                                 </a>
                             
+                            {% elif payment.sponsorship.status == 'Canceled' or payment.sponsorship.status == 'Ended' %}
+                                <span style="background: #ffe3e3; color: #dc3545; padding: 6px 15px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; border: 1px solid #f5c2c7; display: inline-block;">
+                                    <i class="fas fa-ban me-1"></i> الكفالة ملغاة
+                                </span>
+
                             {% elif payment.status == 'Pending' %}
-                                {% if 'cash' in payment.payment_method|lower or 'bank' in payment.payment_method|lower or 'palpay' in payment.payment_method|lower %}
+                                {% if payment.payment_method and payment.payment_method != 'Credit Card' %}
                                     <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
                                         <span style="background: #fff8e1; color: #f57f17; padding: 6px 15px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; border: 1px solid #ffe082; display: inline-block;">
                                             <i class="fas fa-hourglass-half me-1"></i> بانتظار التأكيد
@@ -89,20 +94,20 @@
                                         </span>
                                         
                                         {% if 'cash' in payment.payment_method|lower %}
-                                            <small style="color: #dc3545; font-size: 0.75rem; font-weight: bold;">(يرجى تسليم المبلغ خلال 48 ساعة)</small>
+                                            <small style="color: #dc3545; font-size: 0.75rem; font-weight: bold;">(يرجى تسليم المبلغ للإدارة)</small>
                                         {% endif %}
                                         
                                         {% endif %}
                                     </div>
                                 {% else %}
-                                    <a href="{% url 'pay_checkout' payment.id %}"
+                                    <a href="{% url 'pay_checkout' payment.sponsorship.id %}"
                                         style="background: #2a756b; color: white; padding: 6px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">
                                         <i class="fas fa-credit-card me-1"></i> إكمال الدفع
                                     </a>
                                 {% endif %}
 
                             {% else %}
-                                <a href="{% url 'pay_checkout' payment.id %}"
+                                <a href="{% url 'pay_checkout' payment.sponsorship.id %}"
                                     style="background: #dc3545; color: white; padding: 6px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">
                                     <i class="fas fa-redo me-1"></i> إعادة المحاولة
                                 </a>
@@ -137,8 +142,7 @@
             <div style="text-align: center; margin-bottom: 25px;">
                 <i class="fas fa-check-circle" style="font-size: 40px; color: #68AF73; margin-bottom: 10px;"></i>
                 <h3 style="margin: 0; font-weight: bold;">إيصال دفع إلكتروني</h3>
-                <p style="color: #777; font-size: 0.9rem; margin-top: 5px;">كفالة اليتيم: {{
-                    payment.sponsorship.orphan.name }}</p>
+                <p style="color: #777; font-size: 0.9rem; margin-top: 5px;">كفالة اليتيم: {{ payment.sponsorship.orphan.name }}</p>
             </div>
 
             <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 0.95rem; line-height: 2;">

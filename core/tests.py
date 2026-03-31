@@ -146,6 +146,11 @@ class KafalaGuardianDashboardTest(TestCase):
         
         import uuid
         unique_username = f"orphan_{uuid.uuid4().hex[:6]}"
+        
+        # 🌟 إنشاء ملفات وهمية لتجاوز شرط التحقق الإلزامي في الـ View
+        dummy_birth_cert = SimpleUploadedFile("birth.jpg", b"dummy content", content_type="image/jpeg")
+        dummy_death_cert = SimpleUploadedFile("death.jpg", b"dummy content", content_type="image/jpeg")
+        
         data = {
             'orphan_username': unique_username,
             'orphan_password': 'securepassword123',
@@ -154,18 +159,23 @@ class KafalaGuardianDashboardTest(TestCase):
             'gender': 'Male',
             'area': 'غزة',
             'social_status': 'يتيم الأب',
-            'health_status': 'سليمة'
+            'health_status': 'سليمة',
+            
+            # إرسال الملفات الوهمية ضمن البيانات
+            'birth_certificate': dummy_birth_cert,
+            'death_certificate': dummy_death_cert,
         }
         
         response = self.client.post(reverse('guardian_apply_orphan'), data)
         
-        # 🔥 تتبع دقيق لمسار النظام إذا فشل التوجيه الصحيح
+        # تتبع دقيق لمسار النظام
         if response.status_code == 302:
             print(f"\n--- النظام قام بتوجيهنا إلى: {response.url} ---")
             
-        # نطلب من الاختبار أن يتأكد أن التوجيه ذهب إلى 'أيتامي' وليس لصفحة أخرى كـ تسجيل الدخول
-        self.assertRedirects(response, reverse('guardian_my_orphans'), msg_prefix="التوجيه ذهب لمكان خاطئ!")
+        # التأكد من نجاح التوجيه
+        self.assertRedirects(response, reverse('guardian_my_orphans'), msg_prefix="التوجيه ذهب لمكان خاطئ، تأكد من البيانات المرسلة!")
         
+        # التأكد من حفظ اليتيم في قاعدة البيانات
         new_orphan = Orphan.objects.filter(name='يتيم اختبار').first()
         self.assertIsNotNone(new_orphan, "اليتيم لم يتم حفظه في قاعدة البيانات")
 

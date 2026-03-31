@@ -9,17 +9,17 @@
         style="max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden;">
 
         <div style="background-color: #2a756b; color: white; padding: 25px; text-align: center;">
-            <h2 style="margin: 0; font-weight: bold;">إتمام عملية الدفع</h2>
-            <p style="margin: 5px 0 0 0; opacity: 0.9;">كفالة اليتيم: {{ payment.sponsorship.orphan.name }}</p>
+            <h2 style="margin: 0; font-weight: bold;">إتمام عملية الدفع للكفالة</h2>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">كفالة اليتيم: {{ sponsorship.orphan.name }}</p>
         </div>
 
-        <form method="POST" action="{% url 'pay_checkout' payment.id %}" enctype="multipart/form-data"
+        <form method="POST" action="{% url 'pay_checkout' sponsorship.id %}" enctype="multipart/form-data"
             style="padding: 30px;">
             {% csrf_token %}
 
             <div style="text-align: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px dashed #eee;">
-                <p style="color: #777; font-size: 0.9rem; margin-bottom: 5px;">المبلغ المستحق</p>
-                <h1 style="color: #2a756b; margin: 0; font-size: 2.5rem; font-weight: bold;">${{ payment.amount }}</h1>
+                <p style="color: #777; font-size: 0.9rem; margin-bottom: 5px;">المبلغ المستحق (شامل المدة المحددة)</p>
+                <h1 style="color: #2a756b; margin: 0; font-size: 2.5rem; font-weight: bold;">${{ sponsorship.amount }}</h1>
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -54,7 +54,7 @@
 
             <button type="submit" id="submitBtn"
                 style="width: 100%; background: #2a756b; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.3s; display: none;">
-                تأكيد وإرسال الدفعة
+                تأكيد وإنشاء الدفعة
             </button>
         </form>
     </div>
@@ -80,7 +80,7 @@
             receiptSection.style.display = 'block';
             receiptInput.required = true;
         } else if (method === 'Cash') {
-            instructionsBox.innerHTML = "<strong>تعليمات الدفع النقدي:</strong><br>سيقوم النظام بإنشاء رمز مرجعي لك. يرجى زيارة مقر الجمعية خلال 48 ساعة وتسليم المبلغ نقداً باستخدام الرمز.";
+            instructionsBox.innerHTML = "<strong>تعليمات الدفع النقدي:</strong><br>سيقوم النظام بإنشاء رمز مرجعي لك بمجرد الضغط على تأكيد. يرجى زيارة مقر الجمعية خلال 48 ساعة وتسليم المبلغ نقداً باستخدام الرمز.";
             receiptSection.style.display = 'none';
             receiptInput.required = false;
         } else if (method === 'Credit Card') {

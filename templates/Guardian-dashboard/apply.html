@@ -80,14 +80,14 @@
             {% csrf_token %}
 
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #e9ecef; margin-bottom: 30px;">
-                <h6 style="color: var(--secondary-blue); font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid var(--secondary-blue); padding-bottom: 8px; display: inline-block;">
+                <h6 style="color: #006dff; font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #006dff; padding-bottom: 8px; display: inline-block;">
                     <i class="fas fa-key me-2"></i> بيانات دخول اليتيم للنظام
                 </h6>
                 
                 <div class="row g-3">
                     <div class="col-md-6 form-group">
-                        <label>اسم المستخدم (للدخول) <span class="text-danger">*</span></label>
-                        <input type="text" name="orphan_username" required dir="ltr" placeholder="مثال: ahmad2015" class="form-control-custom" style="text-align: left;">
+                        <label>هوية اليتيم (سيُستخدم كاسم دخول) <span class="text-danger">*</span></label>
+                        <input type="text" name="orphan_username" required dir="ltr" placeholder="رقم الهوية (9 أرقام)" class="form-control-custom" style="text-align: left;" pattern="\d{9}">
                     </div>
                     <div class="col-md-6 form-group">
                         <label>كلمة المرور <span class="text-danger">*</span></label>
@@ -132,11 +132,70 @@
                 </div>
 
                 <div class="col-md-6 form-group">
-                    <label>الحالة الصحية <span class="text-danger">*</span></label>
-                    <input type="text" name="health_status" required placeholder="مثال: سليمة / يحتاج رعاية خاصة" class="form-control-custom">
+                    <label>الحالة الصحية العامة <span class="text-danger">*</span></label>
+                    <select name="health_status" id="health_status" required class="form-control-custom">
+                        <option value="" disabled selected>اختر الحالة الصحية</option>
+                        <option value="ممتازة">ممتازة / سليمة</option>
+                        <option value="جيدة">جيدة</option>
+                        <option value="مريض">مريض</option>
+                        <option value="ذوي احتياجات خاصة">ذوي احتياجات خاصة</option>
+                    </select>
                 </div>
 
-                <div class="col-12 form-group mt-2">
+                <div class="col-md-6 form-group mt-3">
+                    <label>نوع الكفالة المطلوبة <span class="text-danger">*</span></label>
+                    <select name="sponsorship_need" id="sponsorship_need" required class="form-control-custom">
+                        <option value="Monthly">كفالة شهرية شاملة (الافتراضي 60$)</option>
+                        <option value="Educational">كفالة تعليمية</option>
+                        <option value="Health">كفالة صحية</option>
+                        <option value="Financial">كفالة مالية (مقطوعة / استثنائية)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 form-group mt-3">
+                    <label>المبلغ المطلوب شهرياً (دولار) <small class="text-muted">(اختياري)</small></label>
+                    <input type="number" name="requested_amount" min="10" placeholder="اتركه فارغاً لاعتماد المبلغ الافتراضي للنظام" class="form-control-custom">
+                </div>
+
+                <div class="col-md-12 form-group mt-3">
+                    <label>صلة القرابة باليتيم <span class="text-danger">*</span></label>
+                    <input type="text" name="kinship_to_guardian" required placeholder="مثال: عمه، جده، والدته" class="form-control-custom">
+                </div>
+
+                <div class="col-12 form-group mt-3">
+                    <label><i class="fas fa-book-open me-2 text-muted"></i> القصة والخلفية الإنسانية <span class="text-danger">*</span></label>
+                    <textarea name="story" rows="4" placeholder="اكتب نبذة عن حالة اليتيم وظروفه المعيشية والاجتماعية..." class="form-control-custom" required></textarea>
+                </div>
+
+                <div class="col-12 mt-4">
+                    <h6 style="color: #006dff; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #006dff; padding-bottom: 8px; display: inline-block;">
+                        <i class="fas fa-file-pdf me-2"></i> المستندات القانونية الإلزامية
+                    </h6>
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label>شهادة ميلاد اليتيم <span class="text-danger">*</span></label>
+                    <input type="file" name="birth_certificate" accept=".pdf,image/*" required class="form-control-custom bg-white" style="padding: 9px 15px;">
+                    <small class="text-muted">صورة أو ملف PDF</small>
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label>شهادة الوفاة / إثبات الفقد <span class="text-danger">*</span></label>
+                    <input type="file" name="death_certificate" accept=".pdf,image/*" required class="form-control-custom bg-white" style="padding: 9px 15px;">
+                    <small class="text-muted">صورة أو ملف PDF</small>
+                </div>
+                <div class="col-md-12 form-group mt-2">
+                    <label>مستند إثبات الوصاية / حجة الوصاية <span class="text-danger">*</span></label>
+                    <input type="file" name="guardianship_document" accept=".pdf,image/*" required class="form-control-custom bg-white" style="padding: 9px 15px;">
+                    <small class="text-muted">صورة أو ملف PDF يثبت الوصاية القانونية</small>
+                </div>
+                <div class="col-md-12 form-group mt-3" id="health_report_div" style="display: none; background-color: #fff3cd; padding: 15px; border-radius: 10px; border: 1px solid #ffe69c;">
+                    <label style="color: #856404;"><i class="fas fa-notes-medical me-2"></i> التقرير الطبي (إلزامي لهذه الحالة) <span class="text-danger">*</span></label>
+                    <input type="file" name="health_report" id="health_report_input" accept=".pdf,image/*" class="form-control-custom bg-white">
+                    <small class="text-muted">نظراً للحالة الصحية أو نوع الكفالة، يجب إرفاق تقرير طبي معتمد.</small>
+                </div>
+
+                <div class="col-12 form-group mt-4">
                     <label><i class="fas fa-camera me-2 text-muted"></i> صورة اليتيم (اختياري)</label>
                     <label for="orphan-photo" class="custom-file-upload d-block w-100">
                         <input type="file" name="image" accept="image/*" id="orphan-photo" class="file-input" onchange="document.getElementById('photo-label').textContent = this.files[0]?.name || 'اضغط هنا لاختيار صورة من جهازك'">
@@ -147,14 +206,40 @@
             </div>
 
             <div class="d-flex gap-3 mt-5 justify-content-center border-top pt-4">
-                <button type="submit" class="btn px-5 py-2 fw-bold" style="background-color: var(--primary-teal); color: white; border-radius: 8px; font-size: 1.1rem;">
+                <button type="submit" class="btn px-5 py-2 fw-bold" style="background-color: var(--primary-teal); color: #444; border-radius: 8px; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(42, 117, 107, 0.2);">
                     <i class="fas fa-paper-plane me-2"></i> تقديم الطلب
                 </button>
-                <a href="{% url 'guardian_my_orphans' %}" class="btn btn-light px-5 py-2 fw-bold border" style="border-radius: 8px; color: #555; font-size: 1.1rem;">
+                <a href="{% url 'guardian_my_orphans' %}" class="btn btn-light px-5 py-2 fw-bold border" style="border-radius: 8px; color: #666; font-size: 1.1rem;">
                     إلغاء
                 </a>
             </div>
         </form>
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const healthSelect = document.getElementById('health_status');
+        const sponsorshipSelect = document.getElementById('sponsorship_need');
+        const healthReportDiv = document.getElementById('health_report_div');
+        const healthReportInput = document.getElementById('health_report_input');
+
+        function checkHealthRequirements() {
+            const healthStatus = healthSelect.value;
+            const sponsorshipType = sponsorshipSelect.value;
+            
+            if (healthStatus === 'مريض' || healthStatus === 'ذوي احتياجات خاصة' || sponsorshipType === 'Health') {
+                healthReportDiv.style.display = 'block';
+                healthReportInput.required = true; 
+            } else {
+                healthReportDiv.style.display = 'none';
+                healthReportInput.required = false; 
+            }
+        }
+
+        healthSelect.addEventListener('change', checkHealthRequirements);
+        sponsorshipSelect.addEventListener('change', checkHealthRequirements);
+        
+        checkHealthRequirements();
+    });
+</script>
 {% endblock %}

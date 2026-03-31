@@ -1,13 +1,12 @@
 import stripe
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import logout
-
 from core.utils import run_sponsorship_checkups
 from .models import Orphan, Donor, Sponsorship, Payment, Notification, Guardian, OrphanDocument
 from .decorators import guardian_required
 import json
 from django.contrib import messages
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import ExtractMonth
 from django.utils import timezone
 from django.contrib.auth import authenticate, login
@@ -535,22 +534,36 @@ def admin_orphan_details(request, orphan_id):
     if request.method == 'POST':
         
         if 'edit_orphan' in request.POST:
+            # 🌟 تحديث البيانات الأساسية
             orphan.name = request.POST.get('name', orphan.name)
             orphan.age = request.POST.get('age', orphan.age)
             orphan.area = request.POST.get('area', orphan.area)
             orphan.social_status = request.POST.get('social_status', orphan.social_status)
             orphan.health_status = request.POST.get('health_status', orphan.health_status)
             
+            # 🌟 تحديث بيانات الكفالة والقصة
             orphan.sponsorship_status = request.POST.get('sponsorship_status', orphan.sponsorship_status)
             orphan.sponsorship_need = request.POST.get('sponsorship_need', orphan.sponsorship_need)
             orphan.story = request.POST.get('story', orphan.story)
+            orphan.kinship_to_guardian = request.POST.get('kinship_to_guardian', orphan.kinship_to_guardian)
             
+            requested_amount = request.POST.get('requested_amount')
+            if requested_amount:
+                orphan.requested_amount = int(requested_amount)
+            
+            # 🌟 تحديث الملفات والمستندات الجديدة
             if 'birth_certificate' in request.FILES:
                 orphan.birth_certificate = request.FILES['birth_certificate']
             if 'death_certificate' in request.FILES:
                 orphan.death_certificate = request.FILES['death_certificate']
+            if 'guardianship_document' in request.FILES:
+                orphan.guardianship_document = request.FILES['guardianship_document']
+            if 'health_report' in request.FILES:
+                orphan.health_report = request.FILES['health_report']
+                
             orphan.save()
 
+            # 🌟 تحديث بيانات الوصي
             if guardian:
                 guardian.name = request.POST.get('guardian_name', guardian.name)
                 guardian.id_number = request.POST.get('guardian_id', guardian.id_number)
@@ -699,6 +712,34 @@ def manage_sponsorships(request):
 def manage_payments(request):
     if not request.user.is_superuser:
         return redirect('index')
+        
+    if request.method == 'POST' and 'confirm_cash' in request.POST:
+        payment_id = request.POST.get('payment_id')
+        entered_code = request.POST.get('reference_code', '').strip()
+        payment = get_object_or_404(Payment, id=payment_id)
+        
+        if payment.payment_method == 'Cash' and payment.status == 'Pending':
+            if entered_code == payment.transaction_reference:
+                try:
+                    with transaction.atomic():
+                        payment.status = 'Completed'
+                        payment.save()
+                        
+                        sponsorship = payment.sponsorship
+                        sponsorship.status = 'Active'
+                        sponsorship.save()
+                        
+                        orphan = sponsorship.orphan
+                        orphan.sponsorship_status = 'Sponsored'
+                        orphan.save()
+                        
+                    messages.success(request, 'تم تأكيد الدفع النقدي وتفعيل الكفالة وتحديث حالة اليتيم بنجاح.')
+                except Exception as e:
+                    messages.error(request, 'حدث خطأ غير متوقع أثناء معالجة البيانات.')
+            else:
+                messages.error(request, 'الكود المرجعي غير صحيح. يرجى التأكد من الكود مع الكافل.')
+        return redirect('manage_payments')
+
     payments = Payment.objects.select_related('sponsorship__donor', 'sponsorship__orphan').all().order_by('-created_at')
     return render(request, 'Admin-dashboard/paymentsManagement.html', {'payments': payments})
 
@@ -799,42 +840,41 @@ def approve_sponsorship(request, sponsorship_id):
     messages.success(request, "تم تفعيل الكفالة بنجاح.")
     return redirect('manage_sponsorships')
 
-@login_required
+@login_required(login_url='index')
 def reject_sponsorship(request, sponsorship_id):
-    """دالة رفض طلب الكفالة من قبل الإدارة مع إرسال إشعار للكافل"""
     if not request.user.is_superuser:
         return redirect('index')
-    
-    sponsorship = get_object_or_404(Sponsorship, id=sponsorship_id)
-    donor_user = sponsorship.donor.user
-    orphan_name = sponsorship.orphan.name
-    
-    sponsorship.status = 'Canceled'
-    sponsorship.save()
-    
-    sponsorship.orphan.sponsorship_status = 'Available'
-    sponsorship.orphan.save()
-    
-    send_notification(
-        user=donor_user,
-        title="تحديث بخصوص طلب الكفالة",
-        message=f"نعتذر منك، لم تتم الموافقة على طلب كفالة اليتيم ({orphan_name}) في الوقت الحالي. يمكنك التواصل مع الإدارة لمزيد من التفاصيل.",
-        link="/donor/dashboard/"
-    )
-    
-    messages.warning(request, f"تم رفض طلب الكفالة لليتيم {orphan_name} وإشعار الكافل.")
-    return redirect('admin_sponsorship_requests') 
+        
+    if request.method == 'POST':
+        sponsorship = get_object_or_404(Sponsorship, id=sponsorship_id)
+        
+        try:
+            with transaction.atomic():
+                sponsorship.status = 'Canceled'
+                sponsorship.save()
+                
+                orphan = sponsorship.orphan
+                if orphan.sponsorship_status != 'Available':
+                    orphan.sponsorship_status = 'Available'
+                    orphan.save()
+                
+                Payment.objects.filter(sponsorship=sponsorship, status='Pending').update(status='Failed')
+                
+            messages.success(request, 'تم رفض الكفالة، وإلغاء المدفوعات المعلقة، وتحرير اليتيم بنجاح.')
+        except Exception as e:
+            messages.error(request, 'حدث خطأ أثناء رفض الكفالة.')
+            
+    return redirect('manage_sponsorships')
 
 @login_required(login_url='index')
 def notifications_view(request):
     if not request.user.is_superuser:
         return redirect('index')
-    notifications = Notification.objects.all().order_by('-created_at')
-    recent_notifications = Notification.objects.all().order_by('-created_at')[:5]
+        
+    notifications = Notification.objects.filter(Q(recipient__isnull=True) | Q(recipient=request.user)).order_by('-created_at')
     
     return render(request, 'Admin-dashboard/notifications.html', {
         'notifications': notifications,
-        'recent_notifications': recent_notifications
     })
 
 @login_required(login_url='index')
@@ -853,59 +893,45 @@ def edit_profile(request):
     return render(request, 'Admin-dashboard/editProfile.html')
 
 @login_required(login_url='index')
-def accept_sponsorship(request, spon_id):
+def accept_sponsorship(request, sponsorship_id):
     if not request.user.is_superuser or request.method != 'POST':
         return redirect('manage_sponsorships')
+        
+    sponsorship = get_object_or_404(Sponsorship, id=sponsorship_id)
     
-    spon = get_object_or_404(Sponsorship, id=spon_id)
-    
-    spon.status = 'Active'
-    spon.save()
-    
-    spon.orphan.sponsorship_status = 'Sponsored'
-    spon.orphan.save()
-
-    if spon.orphan.user:
-        send_notification(
-            user=spon.orphan.user,
-            title="مبارك! أصبح لديك كافل 🎉",
-            message=f"لقد تم تعيين كفالة جديدة لك بنجاح، يمكنك تفقد السجل المالي الآن.",
-            link="/orphan-dashboard/"
-        )
-
-    send_notification(
-        user=spon.donor.user,
-        title="تم تفعيل كفالتك ✅",
-        message=f"لقد وافقت الإدارة على كفالتك لليتيم {spon.orphan.name}. جزاك الله خيراً.",
-        link="/donor-dashboard/"
-    )
-    
-    pending_payment = spon.payments.filter(status='Pending').first()
-    if pending_payment:
-        pending_payment.status = 'Completed'
-        pending_payment.save()
-    
-    return redirect('manage_sponsorships')
-
-    
-    spon = get_object_or_404(Sponsorship, id=spon_id)
-    spon.delete() 
-    
+    from django.db import transaction
+    with transaction.atomic():
+        sponsorship.status = 'Active'
+        sponsorship.save()
+        
+        orphan = sponsorship.orphan
+        orphan.sponsorship_status = 'Sponsored'
+        orphan.save()
+        
+        Payment.objects.filter(sponsorship=sponsorship, status='Pending').update(status='Completed')
+        
+    messages.success(request, 'تم قبول الكفالة بنجاح وتحديث حالة اليتيم إلى (مكفول).')
     return redirect('manage_sponsorships')
 
 @login_required(login_url='index')
-def end_sponsorship(request, spon_id):
-    if not request.user.is_superuser or request.method != 'POST':
-        return redirect('manage_sponsorships')
-    
-    spon = get_object_or_404(Sponsorship, id=spon_id)
-    spon.status = 'Ended'
-    spon.save()
-    
-    if not Sponsorship.objects.filter(orphan=spon.orphan, status='Active').exists():
-        spon.orphan.sponsorship_status = 'Available'
-        spon.orphan.save()
+def end_sponsorship(request, sponsorship_id):
+    if not request.user.is_superuser:
+        return redirect('index')
         
+    if request.method == 'POST':
+        sponsorship = get_object_or_404(Sponsorship, id=sponsorship_id)
+        
+        with transaction.atomic():
+            sponsorship.status = 'Ended'
+            sponsorship.save()
+            
+            orphan = sponsorship.orphan
+            orphan.sponsorship_status = 'Available'
+            orphan.save()
+            
+            Payment.objects.filter(sponsorship=sponsorship, status='Pending').update(status='Failed')
+            
+        messages.success(request, 'تم إنهاء الكفالة بنجاح.')
     return redirect('manage_sponsorships')
 
 @login_required(login_url='index')
@@ -923,18 +949,21 @@ def renew_sponsorship(request, spon_id):
     return redirect('manage_sponsorships')
 
 @login_required(login_url='index')
-def delete_sponsorship(request, spon_id):
-    if not request.user.is_superuser or request.method != 'POST':
-        return redirect('manage_sponsorships')
-    
-    spon = get_object_or_404(Sponsorship, id=spon_id)
-    orphan = spon.orphan
-    spon.delete()
-    
-    if not Sponsorship.objects.filter(orphan=orphan, status='Active').exists():
-        orphan.sponsorship_status = 'Available'
-        orphan.save()
+def delete_sponsorship(request, sponsorship_id):
+    if not request.user.is_superuser:
+        return redirect('index')
         
+    if request.method == 'POST':
+        sponsorship = get_object_or_404(Sponsorship, id=sponsorship_id)
+        
+        with transaction.atomic():
+            orphan = sponsorship.orphan
+            orphan.sponsorship_status = 'Available'
+            orphan.save()
+            
+            sponsorship.delete()
+            
+        messages.success(request, 'تم حذف الكفالة وسجلاتها بنجاح.')
     return redirect('manage_sponsorships')
 
 
@@ -1106,17 +1135,21 @@ def create_new_sponsorship(request, orphan_id):
                 messages.error(request, "عذراً، هذا اليتيم غير متاح للكفالة في الوقت الحالي.")
                 return redirect('donor_orphans')
 
-            sponsorship_type = request.POST.get('sponsorship_type', 'Monthly')
-            duration_months = int(request.POST.get('duration_months', 1))
+            sponsorship_type = orphan.sponsorship_need
             
-            base_amount = 50.00
-            if sponsorship_type == 'Educational':
-                base_amount = 40.00
-            elif sponsorship_type == 'Health':
-                base_amount = 60.00
-            elif sponsorship_type == 'Financial':
-                base_amount = 50.00
-                
+            if orphan.requested_amount:
+                base_amount = float(orphan.requested_amount)
+            else:
+                if sponsorship_type == 'Educational':
+                    base_amount = 40.00
+                elif sponsorship_type == 'Health':
+                    base_amount = 60.00
+                elif sponsorship_type == 'Monthly':
+                    base_amount = 60.00
+                else:
+                    base_amount = 50.00
+            
+            duration_months = int(request.POST.get('duration_months', 1))
             total_amount = base_amount * duration_months
 
             start_date = timezone.now().date()
@@ -1127,20 +1160,14 @@ def create_new_sponsorship(request, orphan_id):
                 orphan=orphan,
                 amount=total_amount, 
                 start_date=start_date,
-                end_date=end_date,     
+                end_date=end_date,    
                 status='Pending',
                 sponsorship_type=sponsorship_type 
             )
-            
-            first_payment = Payment.objects.create(
-                sponsorship=sponsorship,
-                amount=sponsorship.amount,
-                payment_date=start_date,
-                status='Pending',
-                payment_method='Cash'
-            )
-            
-            return redirect('pay_checkout', payment_id=first_payment.id)
+            orphan.sponsorship_status = 'Pending'
+            orphan.save()
+                        
+            return redirect('pay_checkout', sponsorship_id=sponsorship.id)
             
         except Donor.DoesNotExist:
             return redirect('sponsor_dashboard')
@@ -1155,16 +1182,16 @@ def create_new_sponsorship(request, orphan_id):
 def donor_orphans(request):
     try:
         donor = Donor.objects.get(email=request.user.email)
-        available_orphans = Orphan.objects.filter(sponsorship_status='Available').exclude(sponsorships__donor=donor).distinct()
+        available_orphans = Orphan.objects.filter(
+            sponsorship_status='Available'
+        ).exclude(
+            sponsorships__donor=donor,
+            sponsorships__status__in=['Active', 'Pending']
+        ).distinct()
         
-        # donor_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
-        # unread_count = donor_notifications.filter(is_read=False).count()
-        # recent_notifications = donor_notifications[:5]
     except Donor.DoesNotExist:
         donor = None
         available_orphans = Orphan.objects.filter(sponsorship_status='Available')
-        unread_count = 0
-        recent_notifications = []
         
     query = request.GET.get('q')
     if query:
@@ -1173,8 +1200,6 @@ def donor_orphans(request):
     context = {
         'donor': donor,
         'orphans': available_orphans,
-        # 'unread_count': unread_count,
-        # 'recent_notifications': recent_notifications,
         'user': request.user,
         'search_query': query
     }
@@ -1310,35 +1335,31 @@ def delete_admin_notif(request, notif_id):
 def donor_payments(request):
     try:
         donor = Donor.objects.get(email=request.user.email)
-        payments = Payment.objects.filter(sponsorship__donor=donor).order_by('-payment_date')
+
+        Payment.objects.filter(
+            sponsorship__donor=donor, 
+            status='Pending', 
+            sponsorship__status__in=['Canceled', 'Ended', 'Rejected']
+        ).update(status='Failed')
         
-        # donor_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
-        # unread_count = donor_notifications.filter(is_read=False).count()
-        # recent_notifications = donor_notifications[:5]
+        payments = Payment.objects.filter(sponsorship__donor=donor).order_by('-id')
+        
     except Donor.DoesNotExist:
         donor = None
         payments = []
-        unread_count = 0
-        recent_notifications = []
         
     context = {
         'donor': donor,
         'payments': payments,
-        # 'unread_count': unread_count,
-        # 'recent_notifications': recent_notifications,
         'user': request.user
     }
     return render(request, 'Donor-dashboard/payments.html', context)
 
 @login_required(login_url='index')
-def pay_checkout(request, payment_id):
+def pay_checkout(request, sponsorship_id):
     try:
         donor = Donor.objects.get(email=request.user.email)
-        payment = get_object_or_404(Payment, id=payment_id, sponsorship__donor=donor, status='Pending')
-        
-        # donor_notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
-        # unread_count = donor_notifications.filter(is_read=False).count()
-        # recent_notifications = donor_notifications[:5]
+        sponsorship = get_object_or_404(Sponsorship, id=sponsorship_id, donor=donor)
     except Donor.DoesNotExist:
         return redirect('sponsor_dashboard')
 
@@ -1346,10 +1367,15 @@ def pay_checkout(request, payment_id):
         method = request.POST.get('payment_method')
         reference = request.POST.get('transaction_reference', '')
         
-        payment.payment_method = method
+        payment = Payment.objects.create(
+            sponsorship=sponsorship,
+            amount=sponsorship.amount,
+            payment_date=timezone.now().date(),
+            status='Pending',
+            payment_method=method
+        )
         
         if method == 'Credit Card':
-            payment.save() 
             return redirect('create_stripe_checkout_session', payment_id=payment.id)
             
         elif method in ['Bank', 'PalPay']:
@@ -1357,18 +1383,18 @@ def pay_checkout(request, payment_id):
                 payment.receipt_image = request.FILES['receipt_image']
             payment.transaction_reference = reference
             payment.save()
+            messages.success(request, 'تم رفع إيصال الدفع. يرجى الانتظار لحين تأكيد الإدارة.')
             
         elif method == 'Cash':
             payment.transaction_reference = f"CASH-{payment.id}-{random.randint(1000, 9999)}"
             payment.save()
+            messages.success(request, f'تم تسجيل طلب دفع نقدي. كود المراجعة لتسليمه للإدارة هو: {payment.transaction_reference}')
             
         return redirect('donor_payments')
 
     context = {
         'donor': donor,
-        'payment': payment,
-        # 'unread_count': unread_count,
-        # 'recent_notifications': recent_notifications,
+        'sponsorship': sponsorship, 
         'user': request.user
     }
     return render(request, 'Donor-dashboard/checkout.html', context)
@@ -1506,17 +1532,30 @@ def guardian_apply_orphan(request):
         gender = request.POST.get('gender')
         area = request.POST.get('area', '').strip()
         social_status = request.POST.get('social_status', 'غير محدد').strip()
-        health_status = request.POST.get('health_status', 'سليمة').strip()
+        health_status = request.POST.get('health_status', 'ممتازة').strip()
         
         orphan_username = request.POST.get('orphan_username', '').strip()
         orphan_password = request.POST.get('orphan_password', '')
+        story = request.POST.get('story', '').strip()
+        kinship = request.POST.get('kinship_to_guardian', '').strip()
         
-        if not name or not gender or not area or not orphan_username or not orphan_password:
-            messages.error(request, "يرجى تعبئة جميع الحقول الإلزامية، بما فيها بيانات الدخول.")
+        birth_cert = request.FILES.get('birth_certificate')
+        death_cert = request.FILES.get('death_certificate')
+        guardianship_cert = request.FILES.get('guardianship_document')
+        sponsorship_need = request.POST.get('sponsorship_need', 'Monthly')
+        requested_amount = request.POST.get('requested_amount', '').strip()
+        health_report = request.FILES.get('health_report')
+        
+        if not name or not orphan_username or not orphan_password or not birth_cert or not death_cert:
+            messages.error(request, "يرجى تعبئة جميع الحقول الأساسية وإرفاق المستندات الإلزامية (شهادة الميلاد والوفاة).")
             return render(request, 'Guardian-dashboard/apply.html', {'guardian': guardian})
             
         if User.objects.filter(username=orphan_username).exists():
-            messages.error(request, f"عذراً، اسم المستخدم '{orphan_username}' محجوز مسبقاً.")
+            messages.error(request, f"عذراً، رقم الهوية / اسم المستخدم '{orphan_username}' مسجل مسبقاً.")
+            return render(request, 'Guardian-dashboard/apply.html', {'guardian': guardian})
+        
+        if (health_status in ['مريض', 'ذوي احتياجات خاصة'] or sponsorship_need == 'Health') and not health_report:
+            messages.error(request, "التقرير الطبي إلزامي للحالات المرضية، أو ذوي الاحتياجات الخاصة، أو عند طلب كفالة صحية.")
             return render(request, 'Guardian-dashboard/apply.html', {'guardian': guardian})
         
         try:
@@ -1524,7 +1563,7 @@ def guardian_apply_orphan(request):
                 orphan_user = User.objects.create_user(username=orphan_username, password=orphan_password)
                 
                 orphan = Orphan.objects.create(
-                    user=orphan_user,     
+                    user=orphan_user,    
                     guardian=guardian,      
                     name=name,
                     age=int(age) if age else None,
@@ -1532,6 +1571,14 @@ def guardian_apply_orphan(request):
                     area=area,
                     social_status=social_status,
                     health_status=health_status,
+                    story=story, 
+                    kinship_to_guardian=kinship,
+                    birth_certificate=birth_cert, 
+                    death_certificate=death_cert, 
+                    guardianship_document=guardianship_cert,
+                    sponsorship_need=sponsorship_need,
+                    requested_amount=int(requested_amount) if requested_amount else None,
+                    health_report=health_report, 
                     sponsorship_status='Pending',
                 )
                 
@@ -1539,18 +1586,24 @@ def guardian_apply_orphan(request):
                     orphan.image = request.FILES['image']
                     orphan.save()
                 
-            messages.success(request, f"تم تسجيل اليتيم '{name}' بنجاح. حسابه الآن قيد المراجعة.")
+                admins = User.objects.filter(is_superuser=True)
+                for admin in admins:
+                    Notification.objects.create(
+                        recipient=admin,
+                        title="طلب تسجيل يتيم جديد",
+                        message=f"قام الوصي ({guardian.name}) بتقديم طلب لليتيم '{orphan.name}'. يرجى مراجعة المستندات.",
+                        link=f"/admin/core/orphan/{orphan.id}/change/"
+                    )
+                
+            messages.success(request, f"تم تقديم طلب اليتيم '{name}' بنجاح، وتم إشعار الإدارة. الطلب قيد المراجعة.")
             return redirect('guardian_my_orphans')
             
         except Exception as e:
             print(f"CRITICAL ERROR: {e}")
-            messages.error(request, "حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.")
+            messages.error(request, "حدث خطأ أثناء رفع المستندات والتسجيل. يرجى المحاولة مرة أخرى.")
             return render(request, 'Guardian-dashboard/apply.html', {'guardian': guardian}) 
     
-    context = {
-        'guardian': guardian,
-    }
-    return render(request, 'Guardian-dashboard/apply.html', context)
+    return render(request, 'Guardian-dashboard/apply.html', {'guardian': guardian})
 
 @login_required(login_url='index')
 def guardian_profile(request):
@@ -1604,14 +1657,12 @@ def manage_guardians(request):
             name = request.POST.get('name')
             id_number = request.POST.get('id_number') 
             phone = request.POST.get('phone')
-            relation = request.POST.get('relation_to_orphan')
             email = request.POST.get('email')
             password = request.POST.get('password') 
             payout_method = request.POST.get('payout_method')
             payout_details = request.POST.get('payout_details')
 
             id_document = request.FILES.get('id_document')
-            legal_document = request.FILES.get('legal_document')
 
             from django.contrib.auth.models import User
             if User.objects.filter(username=id_number).exists():
@@ -1624,11 +1675,9 @@ def manage_guardians(request):
                     name=name,
                     id_number=id_number,
                     phone=phone,
-                    relation_to_orphan=relation,
                     payout_method=payout_method,
                     payout_details=payout_details,
                     id_document=id_document,
-                    legal_document=legal_document,
                     is_approved=True 
                 )
                 messages.success(request, 'تم إنشاء حساب الوصي بنجاح.')
@@ -1640,7 +1689,6 @@ def manage_guardians(request):
             guardian.name = request.POST.get('name', guardian.name)
             guardian.id_number = request.POST.get('id_number', guardian.id_number)
             guardian.phone = request.POST.get('phone', guardian.phone)
-            guardian.relation_to_orphan = request.POST.get('relation_to_orphan', guardian.relation_to_orphan)
             guardian.payout_method = request.POST.get('payout_method', guardian.payout_method)
             guardian.payout_details = request.POST.get('payout_details', guardian.payout_details)
             
@@ -1651,18 +1699,13 @@ def manage_guardians(request):
 
             if 'id_document' in request.FILES:
                 guardian.id_document = request.FILES['id_document']
-            if 'legal_document' in request.FILES:
-                guardian.legal_document = request.FILES['legal_document']
-                
+            
             guardian.save()
             messages.success(request, 'تم تعديل بيانات الوصي بنجاح.')
 
         return redirect('manage_guardians')
 
-    context = {
-        'guardians': guardians
-    }
-    return render(request, 'Admin-dashboard/manage_guardians.html', context)
+    return render(request, 'Admin-dashboard/manage_guardians.html', {'guardians': guardians})
 
 @login_required(login_url='index')
 def delete_guardian(request, guardian_id):

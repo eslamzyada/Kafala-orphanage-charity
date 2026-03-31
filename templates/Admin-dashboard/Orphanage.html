@@ -32,54 +32,70 @@
 
     <div class="tab-pane fade show active" id="pending" role="tabpanel">
         <div class="card-body table-responsive" style="max-width: 90%; margin-right: 15px;">
-            <table class="table table-hover text-wrap table-lg"
+            <table class="table table-hover text-wrap table-lg align-middle"
                 style="border-radius: 10px; overflow: hidden; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                <thead class="table-light">
+                <thead style="color: #fff;">
                     <tr>
                         <th>اسم اليتيم</th>
-                        <th>اسم الوصي (مقدم الطلب)</th>
+                        <th>اسم الوصي</th>
                         <th>صلة القرابة</th>
-                        <th>المستند القانوني</th>
-                        <th>إجراءات الإدارة</th>
+                        <th>الكفالة المطلوبة</th>
+                        <th>المرفقات</th>
+                        <th style="text-align: center;">إجراءات الإدارة</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for orphan in pending_orphans %}
                     <tr>
-                        <td style="font-weight: bold; color: var(--dark-text);">{{ orphan.name }}</td>
+                        <td style="font-weight: bold; color: var(--dark-text);">
+                            {{ orphan.name }}
+                            {% if orphan.health_status != 'سليمة' and orphan.health_status != 'ممتازة' %}
+                                <i class="fas fa-heartbeat text-danger ms-1" title="حالة صحية خاصة"></i>
+                            {% endif %}
+                        </td>
                         <td>{{ orphan.guardian.name|default:"-" }}</td>
-                        <td>{{ orphan.guardian.relation_to_orphan|default:"-" }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ orphan.kinship_to_guardian|default:"-" }}</span></td>
                         <td>
-                            {% if orphan.guardian.legal_document %}
-                            <a href="{{ orphan.guardian.legal_document.url }}" target="_blank" class="btn btn-sm"
-                                style="background-color: #e6f3f1; color: var(--primary-color); font-weight: bold;">
-                                <i class="fas fa-file-pdf"></i> عرض المستند
-                            </a>
-                            {% else %}
-                            <span style="color: red; font-weight: bold;">لا يوجد مستند</span>
+                            <span class="fw-bold text-primary">{{ orphan.get_sponsorship_need_display }}</span>
+                            {% if orphan.requested_amount %}
+                                <br><small class="text-muted">مبلغ مخصص: {{ orphan.requested_amount }}$</small>
                             {% endif %}
                         </td>
                         <td>
-                            <div style="display: flex; gap: 10px; justify-content: center;">
+                            <div class="d-flex gap-1 flex-wrap">
+                                {% if orphan.birth_certificate %}
+                                    <span class="badge bg-info text-white" title="شهادة ميلاد"><i class="fas fa-baby"></i></span>
+                                {% endif %}
+                                {% if orphan.death_certificate %}
+                                    <span class="badge bg-dark text-white" title="شهادة وفاة"><i class="fas fa-book-dead"></i></span>
+                                {% endif %}
+                                {% if orphan.guardianship_document %}
+                                    <span class="badge bg-secondary text-white" title="حجة وصاية"><i class="fas fa-file-signature"></i></span>
+                                {% endif %}
+                                {% if orphan.health_report %}
+                                    <span class="badge bg-danger text-white" title="تقرير طبي"><i class="fas fa-notes-medical"></i></span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 8px; justify-content: center;">
+                                <a href="{% url 'admin_orphan_details' orphan.id %}" class="btn btn-sm btn-primary" style="font-weight: bold; padding: 6px 12px;" title="مراجعة الملف">
+                                    <i class="fas fa-eye"></i> مراجعة
+                                </a>
                                 <form method="POST" action="{% url 'approve_orphan_request' orphan.id %}">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-success"
-                                        style="font-weight: bold; padding: 5px 15px;"><i class="fas fa-check"></i>
-                                        اعتماد</button>
+                                    <button type="submit" class="btn btn-sm btn-success" style="font-weight: bold; padding: 6px 12px;" title="اعتماد سريع"><i class="fas fa-check"></i></button>
                                 </form>
-                                <form method="POST" action="{% url 'reject_orphan_request' orphan.id %}"
-                                    onsubmit="return confirm('هل أنت متأكد من رفض وحذف هذا الطلب نهائياً؟');">
+                                <form method="POST" action="{% url 'reject_orphan_request' orphan.id %}" onsubmit="return confirm('هل أنت متأكد من رفض وحذف هذا الطلب نهائياً؟');">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-danger"
-                                        style="font-weight: bold; padding: 5px 15px;"><i class="fas fa-times"></i>
-                                        رفض</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" style="font-weight: bold; padding: 6px 12px;" title="رفض"><i class="fas fa-times"></i></button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px; color: #777; font-weight: bold;">
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #777; font-weight: bold;">
                             لا توجد طلبات جديدة قيد المراجعة.
                         </td>
                     </tr>
@@ -105,7 +121,7 @@
             <select id="socialFilter" class="select-list-header" onchange="filterOrphans()">
                 <option value="">الحالة الاجتماعية (الكل)</option>
                 <option value="father">يتيم الأب</option>
-                <option value="both">يتيم الأبوين</option>
+                <option value="both">يتيم لأبوين</option>
             </select>
 
             <select id="healthFilter" class="select-list-header" onchange="filterOrphans()">
@@ -116,20 +132,20 @@
         </div>
 
         <div class="card-body table-responsive" style="max-width: 90%; margin-right: 15px;">
-            <table class="table table-hover text-wrap table-lg" id="orphansTable"
+            <table class="table table-hover text-wrap table-lg align-middle" id="orphansTable"
                 style="border-radius: 10px; overflow: hidden; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                 <thead>
                     <tr>
-                        <th>رقم اليتيم</th>
+                        <th>الرقم</th>
                         <th>الصورة</th>
                         <th>الأسم</th>
                         <th>العمر</th>
                         <th>الجنس</th>
                         <th>المنطقة</th>
-                        <th>الحالة الإجتماعية</th>
+                        <th>نوع الكفالة</th>
                         <th>الحالة الصحية</th>
                         <th>حالة الكفالة</th>
-                        <th rowspan="2">الإجراءات</th>
+                        <th style="text-align: center;">الإجراءات</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -138,18 +154,16 @@
                         <td>{{ orphan.id }}</td>
                         <td>
                             {% if orphan.image %}
-                            <img src="{{ orphan.image.url }}" alt="صورة اليتيم"
-                                style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            <img src="{{ orphan.image.url }}" alt="صورة اليتيم" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                             {% else %}
-                            <img src="{% static 'img/Group 2987.png' %}" alt="صورة اليتيم"
-                                style="width: 40px; height: 40px; border-radius: 50%;">
+                            <img src="{% static 'img/Group 2987.png' %}" alt="صورة اليتيم" style="width: 40px; height: 40px; border-radius: 50%;">
                             {% endif %}
                         </td>
-                        <td class="orphan-name">{{ orphan.name }}</td>
+                        <td class="orphan-name fw-bold">{{ orphan.name }}</td>
                         <td>{{ orphan.age }} سنة</td>
-                        <td class="orphan-gender">{{ orphan.gender|default:"-" }}</td>
+                        <td class="orphan-gender">{{ orphan.get_gender_display|default:"-" }}</td>
                         <td>{{ orphan.area|default:"-" }}</td>
-                        <td class="orphan-social">{{ orphan.social_status|default:"-" }}</td>
+                        <td><span class="badge bg-primary text-white">{{ orphan.get_sponsorship_need_display }}</span></td>
                         <td class="orphan-health">{{ orphan.health_status|default:"-" }}</td>
 
                         {% if orphan.sponsorship_status == 'Sponsored' %}
@@ -158,13 +172,12 @@
                         <td style="color: #fbba04; font-weight: bold;">متاح للكفالة</td>
                         {% endif %}
 
-                        <td class="stutes">
-                            <a href="{% url 'admin_orphan_details' orphan.id %}" class="show-orphan"
-                                style="text-decoration: none;">عرض</a>
+                        <td class="stutes" style="text-align: center;">
+                            <a href="{% url 'admin_orphan_details' orphan.id %}" class="show-orphan" style="text-decoration: none;">عرض وتعديل</a>
                             <form method="POST" action="{% url 'delete_orphan' orphan.id %}" style="display:inline;">
                                 {% csrf_token %}
                                 <button type="submit" class="delete-orphan"
-                                    style="border:none; cursor:pointer; background:none;"
+                                    style="border:none; cursor:pointer; background:none; padding-right: 10px;"
                                     onclick="return confirm('هل أنت متأكد من حذف هذا اليتيم نهائياً؟')">حذف</button>
                             </form>
                         </td>
@@ -200,7 +213,7 @@
         rows.forEach(row => {
             let name = normalizeArabic(row.querySelector(".orphan-name").innerText);
             let gender = row.querySelector(".orphan-gender").innerText.toLowerCase();
-            let socialStatus = normalizeArabic(row.querySelector(".orphan-social").innerText);
+            let socialStatus = normalizeArabic(row.querySelector(".orphan-social") ? row.querySelector(".orphan-social").innerText : "");
             let healthStatus = row.querySelector(".orphan-health").innerText.toLowerCase();
 
             let matchesSearch = name.includes(searchValue);
